@@ -1,0 +1,177 @@
+# THÔNG TIN APP
+Tên app: NTIEN VECAR 
+Dev & Admin: Nguyễn Tiến
+Link:
++ Zalo:
++ Facebook: 
+# GIAO DIỆN 
+Phong cách: Tối giản, Sang Trọng, Sạch sẽ, Cyberpuck, Gaming
+Màu chủ đạo:
+#080B10, #10151D, #39A9FF, #ffffff, #03ffdd, #ff0000, #b700ff
+Lưu ý:
+Có chế độ Light Mode (Nền sáng), Nền tối (Dark Mode)
+# CẤU TRÚC 
+Có 3 giao diện, màn hình:
++ 1. Giao diện Home 
++ 2. Giao diện Function
++ 3. Giao diện RealTime
+Chi tiết all giao diện 
++ Giao diện Home
+- Hiển thị logo, tên app
+- Nút Mở game, FF, FFMAX 
+- Nút chuyển đến link facebook, zalo dev/admin
+- Nút chuyển đến link group facebook, zalo dev/admin
++ Giao diện Function
+- Có 7 Chức năng:
+Tối ưu máy
+Buff fps
+DNS
+Tối ưu Game
+Ping
+Giảm đồ họa game
+BUFF PING SERVER 
+chức năng chi tiết t cấp sau
++ Giao diện RealTime
+- Có 2 bảng thống kê fps,ping từng giây (sẽ có ảnh minh họa)
+- Có 4 nút Optimize FPS, Optimize GAME, Dọn RAM/Cache, Tối ưu CPU/GPU
+# LUỒNG TƯƠNG TÁC
+- Khi người dùng bật/tắt (Toggle) một chức năng trong tab Function thì sẽ có hiệu ứng rung/đổi màu đặc biệt trên giao diện 
+# API SERVER KEY 
+Máy chủ tự kiểm tra Database, tự chạy các logic tính toán, tự tạo ra cấu trúc giao diện. Sau khi mọi thứ xong xuôi, nó chỉ nhả ra một cục HTML tĩnh gửi về trình duyệt.Người dùng F12 lên chỉ thấy các thẻ < div >, <li> chứa chữ, hoàn toàn không có một dòng logic JS nào
+Api: ""
+
+### CHI TIẾT ###
+# GIAO DIỆN NHẬP KEY
+┌────────────────────────────────────┐
+│                                    │
+│                 🔐                │
+│                                    │
+│            XÁC THỰC KEY            │
+│                                    │
+│        Nhập key để tiếp tục        │
+│                                    │
+│ ┌────────────────────────────────┐ │
+│ │ 🔑  XXX-XXX-XXXX-XXX           │ │
+│ └────────────────────────────────┘ │
+│                                    │
+│ ┌────────────────────────────────┐ │
+│ │           KÍCH HOẠT            │ │
+│ └────────────────────────────────┘ │
+│                                    │
+│       Chưa có key? Mua ngay        │
+│                                    │
+└────────────────────────────────────┘
+Chữ "Mua Ngay" khi ấn vào sẽ chuyển đến Zalo Admin
+# GIAO DIỆN HOME
+┌───────────────────────────────────────────────────────┐
+│                     NTIEN VECAR                       │
+└───────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────┐
+│                                                       │
+│                     AVATAR ADMIN                      │
+│                      Nguyen Tien                      │
+│                   Developer & Admin                   │
+│       (ICON ZALO)             (ICON FACEBOOK )        │
+│          ╔═══════════════════════════════════╗        │
+│          ║   🎮  FREE FIRE                   ║        │
+│          ╚═══════════════════════════════════╝        │
+│          ╔═══════════════════════════════════╗        │
+│          ║   🎮  FREE FIRE MAX               ║        │
+│          ╚═══════════════════════════════════╝        │
+│                                                       │
+┌──────────────────────────────────────────────────────┐
+│  🔑 XXX-XXX-XXXX-XXXXX              [Copy]   │
+│  ───────────────────────────────────────────────│
+│  Trạng thái:  ● ACTIVE                     │
+│  Thiết bị:    8a3f...c12 (đã gắn)         │
+│  Hết hạn:     19/11/2026 · còn 29 ngày    │
+│  ───────────────────────────────────────────────│
+│  [ GIA HẠN ]                      [ XEM CHI TIẾT ]   │
+└───────────────────────────────────────────────────────┘
+│                                                       │
+└───────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────┐
+│      Home            Functions               Setting │
+│       ●                                               │
+└───────────────────────────────────────────────────────┘
+
+# GIAO DIỆN FUNCTION
+┌─────────────────────────────────────┐
+│                                     │
+│           LIST FUNCTIONS            │
+│                                     │
+│     FUNCTION1           OFF         │
+│                                     │
+│     FUNCTION2           OFF         │
+│                                     │
+│     FUNCTION3           OFF         │
+│                                     │
+│     FUNCTION4           OFF         │
+│                                     │
+│     FUNCTION5           OFF         │
+│                                     │
+│     FUNCTION6           OFF         │
+│                                     │
+│     FUNCTION7           OFF         │
+│                                     │
+│     FUNCTION8           OFF         │
+│                                     │
+│                                     │
+└─────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│     Home     Functions    Setting   │
+│                  ●                  │
+└─────────────────────────────────────┘
+# GIAO DIỆN REALTIME
+┌───────────────────────────────────────────────────────┐
+│     (NÚT ẤN VÔ FFTH)             (NÚT ẤN VÔ FFMAX)    │
+│                                                       │
+│            FPS                                        │
+│    (BẢNG THỐNG KÊ HIỆU SUẤT FPS MỖI 1S)               │
+│                                                       │
+│                                                       │
+│                                                       │
+│            PING                                       │
+│    (BẢNG THỐNG KÊ HIỆU SUẤT PING MỖI 1S)              │
+│                                                       │
+│                                                       │
+│                                                       │
+│                                                       │
+│   CPU OPTIMIZE                    RAM OPTIMIZE        │
+│    Tối ưu CPU                 Dọn ram/cache thiết bị  │
+│                                                       │
+│   CLEAN STORAGE                   OPTIMIZE GAME       │
+│   Dọn dẹp Bộ nhớ                   Tối ưu Game        │
+│                                                       │
+│                                                       │
+└───────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────┐
+│      Home            Function               RealTime  │
+│                                                ●      │
+└───────────────────────────────────────────────────────┘
+
+VÍ DỤ 2 BẢNG THỐNG KÊ FPS VÀ PING
+│  ║  ┌─────────────────────────────────┐  ║│
+│  ║  │ FPS                             │  ║│
+│  ║  │                                 │  ║│
+│  ║  │  60                             │  ║│ 
+│  ║  │                                 │  ║│
+│  ║  │  ╱╲    ╱╲    ╱╲    ╱╲           │  ║│ 
+│  ║  │ ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲          │  ║│   
+│  ║  │╱    ╲╱    ╲╱    ╲╱    ╲         │  ║│
+│  ║  │                                 │  ║│
+│  ║  └─────────────────────────────────┘  ║│
+│  ║                                       ║│
+│  ║  ┌─────────────────────────────────┐  ║│
+│  ║  │ PING                            │  ║│
+│  ║  │                                 │  ║│
+│  ║  │  38 ms                          │  ║│
+│  ║  │                                 │  ║│
+│  ║  │  ╲    ╱╲    ╱╲    ╱╲            │  ║│
+│  ║  │   ╲  ╱  ╲  ╱  ╲  ╱  ╲           │  ║│
+│  ║  │    ╲╱    ╲╱    ╲╱    ╲          │  ║│
+│  ║  │                                 │  ║│
+│  ║  └─────────────────────────────────┘  ║│
+
+### LƯU Ý ###
+
