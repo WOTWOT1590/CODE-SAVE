@@ -1,0 +1,1073 @@
+### GIAO DIỆN ###
+
+# 1. HỆ THỐNG THIẾT KẾ CHUNG
+
+Tên hiển thị:
+
+```text
+PROXY VPN
+```
+
+Tên phụ:
+
+```text
+NGUYENTIEN PROXY
+```
+
+Phong cách:
+
+```text
+Azure Noir
+Dark / Glass / Gaming Premium / Minimal Tech
+```
+
+Màu chính:
+
+```text
+Background       #080B10
+Panel            #10151D
+Panel Elevated   #161D27
+Primary Blue     #39A9FF
+Bright Blue      #78C8FF
+Text Primary     #EEF5FA
+Text Secondary   #8996A8
+Border           rgba(120,200,255,0.16)
+Success          #36D98B
+Warning          #FFD166
+Error            #FF5577
+```
+
+Nguyên tắc hình ảnh:
+
+```text
+Không dùng background trắng.
+Không dùng glow xanh mạnh.
+Không dùng gradient quá sáng.
+Không dùng card quá nhiều màu.
+Không dùng icon quá lớn.
+```
+
+Neon chỉ dùng cho:
+
+```text
+Active state
+Focus
+Button chính
+VPN connected
+Progress
+Status indicator
+```
+Luôn xuất hiện ở dưới
+```text
+Copyright © NguyenTien
+```
+(Chi tiết hơn:
+· Tên hiển thị chính: PROXY VPN
+· Tên phụ: NGUYENTIEN PROXY
+· Phong cách: Azure Noir – Dark / Glass / Gaming Premium / Minimal Tech
+· Bảng màu chính:
+  · Background: #080B10
+  · Panel: #10151D
+  · Panel Elevated: #161D27
+  · Primary Blue: #39A9FF
+  · Bright Blue: #78C8FF
+  · Text Primary: #EEF5FA
+  · Text Secondary: #8996A8
+  · Border: rgba(120,200,255,0.16)
+  · Success: #36D98B
+  · Warning: #FFD166
+  · Error: #FF5577
+· Nguyên tắc: Không nền trắng, không glow xanh mạnh, không gradient sáng, hạn chế màu mè. Neon chỉ dùng cho active, focus, button chính, trạng thái VPN, progress, status indicator.
+· Bo góc: Card lớn 18dp; card nhỏ 12–14dp; button/input 10–12dp; chip 8dp.
+· Khoảng cách: Padding màn hình 16dp, khoảng cách card 12dp, khoảng cách nội dung 8–10dp.
+)
+
+# 2. MÀN HÌNH XÁC THỰC KEY
+
+Đây là màn hình quan trọng nhất trước Dashboard.
+
+Có một quầng xanh rất nhẹ phía sau card.
+
+## Card
+
+Card nằm giữa màn hình.
+
+Chiều rộng khoảng:
+
+```text
+85–90% màn hình
+```
+
+Cấu trúc:
+
+```text
+
+```
+
+## Logo
+
+Icon khóa:
+
+```text
+32–36dp
+```
+
+Nằm trong vòng tròn/card:
+
+```text
+72 × 72dp
+```
+
+nền:
+
+```text
+rgba(57,169,255,.08)
+```
+
+Border:
+
+```text
+rgba(57,169,255,.18)
+```
+
+## Tiêu đề
+
+```text
+XÁC THỰC KEY
+```
+
+Font:
+
+```text
+20–22sp
+Bold
+```
+
+## Subtitle
+
+```text
+Nhập key để tiếp tục
+```
+
+12–13sp.
+
+## Input
+
+Chiều cao:
+
+```text
+50–52dp
+```
+
+Nền:
+
+```text
+#10151D
+```
+
+Border bình thường:
+
+```text
+rgba(120,200,255,.16)
+```
+
+Focus:
+
+```text
+#39A9FF
+```
+
+Placeholder:
+
+```text
+🔑  Nhập mã key...
+```
+
+## Button
+
+```text
+KÍCH HOẠT
+```
+
+Nền:
+
+```text
+#39A9FF
+```
+
+Text:
+
+```text
+#080B10
+```
+
+Khi loading:
+
+```text
+◌ ĐANG XÁC THỰC...
+```
+
+## Error
+
+Nằm dưới button:
+
+```text
+Key không tồn tại
+```
+
+màu:
+
+```text
+#FF5577
+```
+
+## Success
+
+```text
+✓ Xác thực thành công
+```
+
+màu:
+
+```text
+#36D98B
+```
+
+(Chi tiết hơn:
+· Background: #080B10, có grid kỹ thuật rất mờ (opacity 2–4%), có quầng xanh nhẹ phía sau card.
+· Card trung tâm: Chiều rộng 85–90% màn hình (trên tablet giới hạn 360–450dp), padding 24dp, nền #10151D, viền rgba(120,200,255,0.16), bo góc 18dp.
+· Bên trong card (theo thứ tự):
+  1. Icon khóa: 🔐, cỡ 32–36dp, nằm trong khối tròn 72×72dp, nền rgba(57,169,255,.08), viền rgba(57,169,255,.18).
+  2. Tiêu đề: "XÁC THỰC KEY", cỡ 20–22sp, đậm, màu #EEF5FA.
+  3. Subtitle: "Nhập key để tiếp tục", cỡ 12–13sp, màu #8996A8.
+  4. Input: Chiều cao 50–52dp, nền #10151D, border rgba(120,200,255,.16), focus border #39A9FF. Placeholder: "🔑  Nhập mã key...". Text input cỡ 16sp màu #EEF5FA.
+  5. Button KÍCH HOẠT: Nền #39A9FF, chữ màu #080B10 (tối), đậm, bo góc 10–12dp, padding dọc 14dp. Trạng thái loading: chữ "◌ ĐANG XÁC THỰC...", nền chuyển #161D27, chữ #8996A8.
+  6. Thông báo lỗi: Dưới button, cỡ 13sp. Nếu key sai: "Key không tồn tại", màu #FF5577. Nếu thành công: "✓ Xác thực thành công", màu #36D98B.
+  7. Dòng "Chưa có key? Mua ngay": Màu #78C8FF, cỡ 14sp, bấm được.
+  8. Dòng "© NguyenTien": Màu #8996A8, cỡ 12sp.
+)
+
+# 3. DASHBOARD — HOME
+
+Đây là màn hình chính.
+
+## Header
+
+```text
+┌─────────────────────────────────────┐
+│           PROXY VPN           ⚙    │
+└─────────────────────────────────────┘
+```
+
+ở giữa:
+
+```text
+PROXY VPN
+```
+
+Bên phải:
+
+```text
+Refresh
+Settings
+```
+
+Header nền:
+
+```text
+rgba(8,11,16,.86)
+```
+
+và blur.
+
+---
+
+# 4. VPN HERO CARD
+
+Đây là card lớn nhất Dashboard.
+
+```text
+┌─────────────────────────────────────┐
+│                                     │
+│            PROXY VPN                │
+│                                     │
+│                ◉                    │
+│                                     │
+│              VPN OFF                │
+│                                     │
+│                                     │
+│                                     │
+│  KEY: XXXX-XXXX-XXXX                │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+## Trạng thái OFF
+
+Circle:
+
+```text
+100–120dp
+```
+
+Border:
+
+```text
+rgba(57,169,255,.18)
+```
+
+Icon:
+
+```text
+#32c515
+```
+
+Button tròn chính giữa ở trên chữ VPN OFF.
+
+## Trạng thái CONNECTING
+
+```text
+◌
+CONNECTING...
+```
+
+Button bị disable.
+
+Subtitle:
+
+```text
+Initializing network interface...
+```
+
+## Trạng thái ON
+
+Card đổi nhẹ border.
+
+```text
+┌─────────────────────────────────────┐
+│                                     │
+│            PROXY VPN                │
+│                                     │
+│                ◉                    │
+│                                     │
+│              VPN ON                 │
+│                                     │
+│                                     │
+│                                     │
+│  KEY: XXXX-XXXX-XXXX                │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+Có ripple:
+
+```text
+Circle 1
+Circle 2
+Circle 3
+```
+
+đồng tâm, rất nhẹ.
+
+(Chi tiết hơn:
+· Header: Trên cùng, nền rgba(8,11,16,.86) và có blur. Bố cục:
+  · Ở giữa: Tiêu đề "PROXY VPN" (hoặc "NGUYENTIEN PROXY" tùy màn hình), cỡ 18–20sp đậm.
+  · Bên phải: Settings (⚙), cỡ 22–24dp, màu #8996A8.
+  · Không có nút back ở Dashboard.
+· Là card lớn nhất Dashboard, chiều cao khoảng 220–260dp.
+· Nền #10151D, viền rgba(120,200,255,0.16), bo góc 18dp, padding 20dp.
+· Trạng thái VPN OFF:
+  · Tiêu đề nhỏ: "PROXY VPN" (hoặc logo).
+  · Nút tròn trung tâm: Đường kính 100–120dp, nền #161D27, viền rgba(57,169,255,.18). Bên trong có biểu tượng nguồn (hoặc chấm tròn) màu #32c515 (xanh lá).
+  · Dưới nút: chữ "VPN OFF", màu #8996A8, cỡ 18–20sp đậm.
+  · Khi tắt, không có ripple hay glow.
+· Trạng thái CONNECTING:
+  · Nút tròn chuyển thành spinner màu #39A9FF.
+  · Dưới nút: "CONNECTING..." màu #FFD166.
+  · Subtitle: "Initializing network interface...", màu #8996A8.
+  · Nút bị vô hiệu hóa.
+· Trạng thái VPN ON:
+  · Nút tròn giữ nguyên kích thước, viền chuyển #39A9FF, bên trong có chấm tròn màu #39A9FF.
+  · Dưới nút: "VPN ON", màu #36D98B, đậm.
+  · Card có thêm ripple: ba vòng tròn đồng tâm lan tỏa từ nút, rất nhẹ, màu rgba(57,169,255,.2).
+· Card hiển thị thông tin giấy phép.
+· Bố cục:
+  · Header: "LICENSE" bên trái, badge "ACTIVE" bên phải (màu xanh lá #36D98B).
+  · KEY: "••••-••••-••••-••••" (mask).
+  · DEVICE: Trạng thái "BOUND".
+  · FUNCTION: Liệt kê các function dạng chip hoặc text nhỏ, ví dụ "FUNCTION1 FUNCTION2 FUNCTION3".
+  · EXPIRES: "30/09/2026".
+· Click card mở màn hình License Detail.
+)
+
+# 5. LICENSE CARD
+
+```text
+┌─────────────────────────────────────┐
+│ LICENSE                           < │
+│                                     │
+│ KEY                                 │
+│ ••••-••••-••••-••••                 │
+│                                     │
+│ DEVICE:                             │
+│                                     │
+│ FUNCTION                            │
+│ FUNCTION1   FUNCTION2   FUNCTION3   │
+│ FUNCTION4   FUNCTION5   FUNCTION5   │
+│                                     │
+│ EXPIRES                             │
+│ 30/09/2026                          │
+└─────────────────────────────────────┘
+```
+
+Status badge:
+
+```text
+ACTIVE
+```
+
+màu xanh.
+
+Click card mở License Detail.
+
+---
+
+# 7. SETTINGS
+
+Màn hình:
+
+```text
+SETTINGS
+```
+## APP
+
+```text
+APP NAME: PROXY VPN
+APP VERSION: 8/2026
+CONTACT: 0818709994
+```
+
+## ABOUT
+
+```text
+Copyright © NguyenTien
+```
+
+---
+
+# 8. ERROR SCREEN
+
+Khi API lỗi:
+
+```text
+┌───────────────────────────────┐
+│                               │
+│              !                │
+│                               │
+│       CONNECTION ERROR        │
+│                               │
+│  Không thể kết nối server.    │
+│                               │
+│        [ TRY AGAIN ]          │
+│                               │
+└───────────────────────────────┘
+```
+
+Nếu key expired:
+
+```text
+LICENSE EXPIRED
+
+Key của bạn đã hết hạn.
+
+[ ENTER NEW KEY ]
+```
+
+Nếu revoked:
+
+```text
+ACCESS REVOKED
+
+License đã bị vô hiệu hóa.
+
+[ ENTER NEW KEY ]
+```
+
+Nếu device mismatch:
+
+```text
+DEVICE MISMATCH
+
+Key đang được sử dụng trên
+thiết bị khác.
+
+[ CONTACT SUPPORT ]
+```
+(Chi tiết hơn:
+· Khi API lỗi kết nối:
+  · Icon "!" lớn.
+  · "CONNECTION ERROR".
+  · "Không thể kết nối server." (màu #FF5577).
+  · Nút "TRY AGAIN" (nền #39A9FF).
+· Khi key expired:
+  · "LICENSE EXPIRED".
+  · "Key của bạn đã hết hạn."
+  · Nút "ENTER NEW KEY".
+· Khi bị revoked:
+  · "ACCESS REVOKED".
+  · "License đã bị vô hiệu hóa."
+  · Nút "ENTER NEW KEY".
+· Khi device mismatch:
+  · "DEVICE MISMATCH".
+  · "Key đang được sử dụng trên thiết bị khác."
+  · Nút "CONTACT SUPPORT".
+)
+---
+
+# 9. OFFLINE STATE
+
+Khi mất Internet nhưng vẫn trong grace period:
+
+Header:
+
+```text
+● OFFLINE MODE
+```
+
+màu vàng.
+
+Dashboard:
+
+```text
+CONNECTION
+Last known connection
+
+Last check
+20:41:58
+
+Retrying...
+```
+
+Thanh nhỏ:
+
+```text
+Offline grace
+04:32 remaining
+```
+
+Không làm UI nhảy sang màn hình lỗi ngay lập tức.
+
+---
+
+# 10. BOTTOM NAVIGATION
+
+Đây là thành phần cố định ở đáy màn hình.
+
+```text
+┌──────────────────────┐
+│                      │
+│  Home  Functions  ⚙ │
+│   ●                  │
+└──────────────────────┘
+```
+
+Tao đề xuất chính xác 5 mục:
+
+```text
+HOME
+FUNCTIONS
+SETTINGS
+```
+
+Active:
+
+```text
+icon #39A9FF
+text #78C8FF
+```
+
+Inactive:
+
+```text
+#8996A8
+```
+
+Background:
+
+```text
+#0D1219
+```
+
+Border top:
+
+```text
+rgba(120,200,255,.12)
+```
+
+Navigation có animation khoảng `180–220ms`.
+
+---
+
+# 11. MENU TRANSITION
+
+Không dùng transition quá màu mè.
+
+Chuyển màn hình:
+
+```text
+fade + translateY(6dp)
+```
+
+Thời gian:
+
+```text
+180–220ms
+```
+
+Modal:
+
+```text
+fade in
+scale 0.98 → 1.0
+```
+
+Bottom sheet:
+
+```text
+translateY(100%) → translateY(0)
+```
+
+---
+
+# 12. DARK BACKGROUND
+
+Background không phải một màu đen phẳng.
+
+Lớp 1:
+
+```text
+#080B10
+```
+
+Lớp 2:
+
+```text
+radial blue
+opacity 4–8%
+```
+
+Lớp 3:
+
+```text
+technical grid
+opacity 2–3%
+```
+
+Lớp 4:
+
+```text
+black gradient
+```
+
+Mục tiêu là nhìn gần giống một **premium networking control panel**, không phải dashboard HTML đơn giản.
+
+---
+
+# 13. TRẠNG THÁI MÀU
+
+### VPN OFF
+
+```text
+Status     #8996A8
+Button     #161D27
+Circle     rgba(120,200,255,.16)
+```
+
+### VPN CONNECTING
+
+```text
+Status     #FFD166
+Spinner    #39A9FF
+```
+
+### VPN CONNECTED
+
+```text
+Status     #36D98B
+Accent     #39A9FF
+```
+
+### SERVER ERROR
+
+```text
+Status     #FF5577
+```
+
+### OFFLINE
+
+```text
+Status     #FFD166
+```
+
+---
+
+# 14. ANDROID SCREEN FLOW HOÀN CHỈNH
+
+```text
+                    SPLASH
+                      │
+                      ▼
+             SESSION VALIDATION
+                      │
+             ┌────────┴────────┐
+             │                 │
+           VALID            INVALID
+             │                 │
+             ▼                 ▼
+         DASHBOARD          ACTIVATION
+                               │
+                               ▼
+                        INPUT KEY
+                               │
+                               ▼
+                          ACTIVATE
+                               │
+                     ┌─────────┴─────────┐
+                     │                   │
+                   ERROR              SUCCESS
+                     │                   │
+                     ▼                   ▼
+                 ERROR UI             LOADING
+                                         │
+                                      100%
+                                         │
+                                         ▼
+                                    DASHBOARD
+                                         │
+          ┌──────────┬──────────┬────────┼─────────┐
+          ▼          ▼          ▼        ▼         ▼
+        HOME       FUNC       BOOST     LIVE    SETTINGS
+                                           │
+                                           ▼
+                                      DIAGNOSTICS
+```
+
+# 15. HIERARCHY CUỐI CÙNG
+
+Toàn bộ app nên nhìn theo thứ tự:
+
+```text
+PROXY VPN
+↓
+SYSTEM STATUS
+↓
+VPN CONNECTION
+↓
+SERVER
+↓
+PING / JITTER / SPEED
+↓
+LICENSE
+↓
+AUTHORIZED FUNCTIONS
+↓
+DIAGNOSTICS
+↓
+SETTINGS
+↓
+BOTTOM NAVIGATION
+```
+# 16. MIÊU TẢ CHI TIẾT 
+ĐẦU TIÊN NG DÙNG (NGD) VÔ APP .
+APP SẼ XUẤT HIỆN MÀN HÌNH XÁC THỰC KEY.
+Cấu trúc:
+
+```text
+┌────────────────────────────────────┐
+│                                    │
+│                 🔐                │
+│                                    │
+│            XÁC THỰC KEY            │
+│                                    │
+│        Nhập key để tiếp tục        │
+│                                    │
+│ ┌────────────────────────────────┐ │
+│ │ 🔑  XXX-XXX-XXXX-XXX           │ │
+│ └────────────────────────────────┘ │
+│                                    │
+│ ┌────────────────────────────────┐ │
+│ │           KÍCH HOẠT            │ │
+│ └────────────────────────────────┘ │
+│                                    │
+│       Chưa có key? Mua ngay        │
+│                                    │
+│          © NguyenTien              │
+└────────────────────────────────────┘
+```
+TRONG ĐÓ:
+NẾU ẤN NÚT "Mua ngay" APP SẼ CHUYỂN ĐẾN LINK ZALO ĐỂ NGD MUA KEY.
+APP SẼ CHECK KEY XEM ĐÚNG KHÔNG
++ NẾU LỖI:
+APP SẼ HIỆN Ở TRÊN NÚT KÍCH HOẠT "Key không tồn tại hoặc đã hết hạn."
++ NẾU ĐÚNG:
+APP SẼ CHO VÀO MÀN HÌNH MENU CHÍNH ĐỂ BẬT/TẮT VPN
+MENU BẬT TẮT VPN SẼ CÓ DẠNG 
+'''
+┌─────────────────────────────────────┐
+│           PROXY VPN           ⚙    │
+└─────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│                                     │
+│            PROXY VPN                │
+│                                     │
+│                ◉                   │
+│                                     │
+│              VPN OFF                │
+│                                     │
+│                                     │
+│                                     │
+│                                     │
+└─────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│ LICENSE                           < │
+│                                     │
+│ KEY                                 │
+│ ••••-••••-••••-••••                 │
+│                                     │
+│ DEVICE:                             │
+│                                     │
+│ FUNCTION                            │
+│ FUNCTION1   FUNCTION2   FUNCTION3   │
+│ FUNCTION4   FUNCTION5   FUNCTION5   │
+│                                     │
+│ EXPIRES                             │
+│ 30/09/2026                          │
+└─────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│      Home      Functions         ⚙ │
+│       ●                             │
+└─────────────────────────────────────┘
+│       Copyright © NguyenTien        │
+└─────────────────────────────────────┘
+
+
+'''
+TRONG ĐÓ 
+NẾU ẤN VÀO NÚT "⚙" (LÀ NÚT CÀI ĐẶT) SẼ VÔ PHẦN "SETTINGS"
+NẾU ẤN VÀO "│ LICENSE                           < │" THÌ SẼ ẨN/HIỆN NÓ ĐI
+CÒN (VÍ DỤ)'''
+┌─────────────────────────────────────┐
+│                                     │
+│            PROXY VPN                │
+│                                     │
+│                ◉                   │ (◉ LÀ NÚT HÌNH TRÒN LỚN ĐỂ BẬT/TẮT VPN)(MÀU SẼ TÙY THUỘC KHI BẬT/TẮT)(MÀU XANH NHẸ NẾU ĐANG TẮT, MÀU ĐỎ NHẸ NẾU ĐANG BẬT)
+│                                     │
+│              VPN OFF                │ (TRẠNG THÁI BẬT/TẮT)
+│                                     │
+│                                     │
+│                                     │
+│                                     │
+└─────────────────────────────────────┘
+'''
+NẾU VÀO PHẦN "Functions" THÌ SẼ HIỆN RA (VÍ DỤ)
+┌─────────────────────────────────────┐
+│                                     │
+│          LIST OF FUNCTIONS          │
+│     FUNCTION1           ON          │
+│                                     │
+│     FUNCTION2           🔒          │
+│                                     │
+│     FUNCTION3           🔒          │
+│                                     │
+│     FUNCTION4           🔒          │
+│                                     │
+│     FUNCTION5           ON          │
+│                                     │
+│     FUNCTION6           🔒          │
+│                                     │
+│     FUNCTION7           ON          │
+│                                     │
+│                                     │
+│                                     │
+│                                     │
+└─────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│      Home      Functions         ⚙ │
+│                   ●                 │
+└─────────────────────────────────────┘
+│       Copyright © NguyenTien        │
+└─────────────────────────────────────┘
+(Chi tiết hơn:
+· Được truy cập từ bottom navigation (tab "FUNC").
+· Header: "FUNCTIONS", dòng phụ "Authorized modules".
+· Mỗi chức năng là một card row (nền panel, bo góc 12–14dp, padding 12–14dp):
+  · Icon/checkbox: ◉ (màu #39A9FF nếu active).
+  · Tên chức năng: "Network Optimizer", đậm.
+  · Mô tả ngắn: "Network performance", màu #8996A8.
+  · Công tắc (switch): ON/OFF, dạng iOS (rộng 44dp, cao 24dp, nền #161D27, khi ON nền #39A9FF).
+· Nếu chưa được cấp quyền:
+  · Hiển thị "Premium Feature", icon 🔒, thay vì switch.
+  · Dòng phụ: "Requires upgraded license".
+· Danh sách được render động dựa trên functions từ backend.
+)
+NẾU VÀO PHẦN "⚙" (SETTINGS) SẼ CÓ
+┌─────────────────────────────────────┐
+│                                     │
+│              SETTINGS               │
+│                                     │
+│  Device: ......                     │
+│  Android Version: ..                │
+│  Device name: .....                 │
+│                                     │
+│ APP & ABOUT                         │
+│  PROXY VPN: NGUYỄN TIẾN             │
+│  App Version: 1.0                   │
+│  Zalo: 0818709994                   │
+│  Copyright © NguyenTien             │
+│                                     │
+│                                     │
+└─────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│      Home      Functions         ⚙ │
+│                                  ●  │
+└─────────────────────────────────────┘
+│       Copyright © NguyenTien        │
+└─────────────────────────────────────┘
+
+### CÁCH HOẠT ĐỘNG ###
+
+# 1.XÁC THỰC KEY (ĐÚNG/SAI)
+Người dùng nhập key vào ô input. Khi nhấn nút KÍCH HOẠT, ứng dụng thực hiện các bước sau:
+
+Lấy device fingerprint (dấu vân tay thiết bị) bằng cách kết hợp Android ID, hardware serial (nếu có) và một installation ID ngẫu nhiên được tạo lần đầu, sau đó băm SHA-256.
+
+Gửi HTTP GET đến API backend:
+https://shop-key-app.onrender.com/api/v2/check-function/key={key}?device_id={device_id}
+( {device_id} được tạo từ Android ID + Installation ID ngẫu nhiên + Hardware hash, sau đó băm SHA-256.)
+Server kiểm tra key trong cơ sở dữ liệu:
+
+Nếu key không tồn tại → trả về:
+{
+  "key": false,
+  "content": "Key không tồn tại"
+}
+
+Nếu key tồn tại nhưng chưa kích hoạt → trả về:
+{
+  "key": true,
+  "device_id": "{device_id}",
+  "activated": true,
+  "functions": [
+    {
+      "id": 1,
+      "name": "Tối ưu máy"
+    },
+    {
+      "id": 2,
+      "name": "Ping"
+    },
+    {
+      "id": 3,
+      "name": "Tối ưu hoá v1"
+    },
+    {
+      "id": 4,
+      "name": "Bảo mật nâng cao"
+    },
+    {
+      "id": 5,
+      "name": "Chống rớt mạng"
+    },
+    {
+      "id": 6,
+      "name": "Băng thông không giới hạn"
+    }
+  ]
+}
+
+Nếu key đã kích hoạt trên thiết bị khác → trả về:
+{
+  "key": false,
+  "content": "Key đã được kích hoạt trên thiết bị khác"
+}
+
+Ứng dụng xử lý phản hồi:
+
+Nếu key == false → hiển thị phần "content" 
+
+Nếu key == true và device_id == null → thì api sẽ cập nhập {device_id} bằng https://shop-key-app.onrender.com/api/v2/check-function/key={key}?device_id={device_id}
+
+Nếu key == true và device_id trùng khớp → xác thực thành công ngay.
+
+Khi thành công, ứng dụng hiển thị "✓ Xác thực thành công" (màu xanh lá).
+
+Luôn check key mỗi 60s nếu key hết hạn hoặc bị xóa thì sẽ out ra màn hình nhập key, nếu key hết hạn hoặc bị xóa mà NGD đang bật VPN thì sẽ thông báo đến NGD phần "content" api trả về và tắt VPN và all chức năng đang sử dụng.
+
+# 2.CÁCH APP LẤY DỮ LIỆU CHỨC NĂNG CỦA KEY VÀ BẬT/TẮT CHỨC NĂNG CỦA RIÊNG KEY
+
+App sẽ lấy các chức năng của key bằng api (api sẽ cung cấp phần function để app có thể nhận biết có những chức năng nào của key bằng id chức năng),sau khi có id các chức năng của key có app sẽ bật từng chức năng theo key bằng id nhận diện rồi bật file chức năng.
+
+### CÁCH PHÒNG CHỐNG CRACK, GIẢI MÃ,... APP ###
+1. Dịch chuyển 100% "Chất xám" xuống tầng C++ Kernel (Chống lộ Thuật toán & Data)
+Để hacker decompile APK (Kotlin/Java) mà không thấy bất kỳ thuật toán Ping, Anti-DPI hay cấu hình nào, bạn phải biến Kotlin thành một "khung vỏ rỗng".
+
+Cách làm:
+
+Bỏ qua JNI truyền ByteArray: Không truyền từng gói tin từ Kotlin xuống C++ (gây trễ ping).
+
+Giao File Descriptor (FD): Tầng Kotlin chỉ dùng VpnService.Builder để tạo giao diện TUN, sau đó lấy tun_fd (kiểu Int) ném thẳng xuống C++ qua hàm startNativeEngine(fd). Sau bước này, Kotlin "đi ngủ".
+
+Xử lý tại C++: Tầng C++ NDK sử dụng lệnh read(tun_fd, ...) để lấy trực tiếp gói tin từ Linux Kernel. Toàn bộ logic thuật toán (Ping, FEC, Anti-DPI) viết bằng C/C++.
+
+Kết quả: Hacker mở APK bằng Jadx chỉ thấy mã UI và hàm truyền FD vô hại. "Chất xám" đã bị biến thành mã máy nhị phân (Machine Code) nằm trong file lib.so.
+
+2. Tiêu diệt khả năng dịch ngược file C++ bằng OLLVM (Chống IDA Pro/Ghidra)
+Dù logic nằm ở C++, hacker lão luyện vẫn có thể dùng IDA Pro để phân tích mã Assembly. Bạn cần dùng bộ làm rối trình biên dịch.
+
+Cách làm:
+
+Sử dụng trình biên dịch OLLVM (Obfuscator-LLVM) thay cho Clang mặc định của Android Studio.
+
+Thêm các cờ biên dịch vào CMakeLists.txt:
+
+-mllvm -fla: Băm nát luồng thực thi (Control Flow Flattening). Xóa bỏ cấu trúc vòng lặp, if/else.
+
+-mllvm -bcf: Sinh ra hàng vạn dòng mã Assembly giả (Bogus Control Flow) đan xen mã thật.
+
+-mllvm -sobf: Tự động mã hóa toàn bộ chuỗi tĩnh (String Encryption) ngay lúc build.
+
+Kết quả: Nếu hacker mở file .so ra, họ sẽ đối mặt với một "nồi cám lợn" toán học. Không thể phân biệt đâu là hàm Ping, đâu là hàm Check Key.
+
+3. Vá lỗ hổng Check Key ngầm (Chống Frida Hooking)
+Nếu bạn để luồng Check Key 60s chạy trên Kotlin (Coroutines) hoặc C++ mà chỉ trả về true/false, hacker sẽ dùng Frida hook vào hàm đó và ép kết quả luôn trả về true.
+
+Cách làm (Mô hình Mật mã Ràng buộc):
+
+Luồng Check Key 60s phải chạy ngầm bằng std::thread bên trong C++.
+
+Dùng Raw ARM64 Syscalls để kết nối HTTP Socket lên server Node.js, bỏ qua thư viện libc.so để Frida không thể đánh chặn gói tin mạng.
+
+Đổi cơ chế API: API Server không trả về true/false. Nếu Key hợp lệ, Server trả về một AES-256 Session Key thay đổi mỗi 60s.
+
+Tầng C++ bắt buộc phải có AES Session Key này để giải mã liên tục các khối lệnh thuật toán trong RAM (hoặc dùng nó làm Seed cho bộ xáo trộn gói tin).
+
+Kết quả: Nếu Key hết hạn, API không trả về AES Session Key. C++ không có khóa → Thuật toán vỡ vụn → App tự ngắt kết nối. Hacker có dùng Frida ép hàm trả về true cũng vô dụng vì không có Key giải mã thực sự.
+
+4. Giải quyết triệt để Race Condition (An toàn đa luồng không làm tăng Ping)
+Khi App đang xử lý hàng chục nghìn gói tin mỗi giây (Packet Loop) mà luồng Check Key (hoặc User UI) ra lệnh tắt/bật một chức năng → Gây xung đột bộ nhớ (ConcurrentModificationException hoặc Segmentation Fault) làm crash App. Nếu dùng mutex hay lock, ping game sẽ tăng vọt.
+
+Cách làm (Sử dụng RCU Pattern / Con trỏ Nguyên tử - Atomic Pointers):
+
+Trong C++, cấu trúc danh sách tính năng (Pipeline) phải được quản lý bằng std::atomic<Pipeline*>.
+
+Khi người dùng/API yêu cầu thay đổi (Bật/tắt Ping, Optimize):
+
+Luồng UI/API tạo ra một mảng tính năng MỚI HOÀN TOÀN trên bộ nhớ (Bản sao).
+
+Dùng lệnh hoán đổi nguyên tử atomic_store để trỏ mũi tên của Packet Loop sang mảng MỚI.
+
+Chờ một nhịp (để các gói tin cũ chạy xong), sau đó delete mảng CŨ.
+
+Kết quả: Vòng lặp mạng Layer 3 ở tốc độ cao (hot-path) chỉ việc đọc con trỏ mà không bao giờ bị khóa. Xung đột luồng bị triệt tiêu 100%, ping duy trì ở mức tối thiểu tuyệt đối.
+
+### 

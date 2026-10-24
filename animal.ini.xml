@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Asset_DataAsset>
+	<freefireConfig>
+		<option name="on=1" strings="$WRITE_FILE$" />
+		<option name="off=0" strings="$WRITE_FILE$" />
+		<headlockSettings>
+			<option name="lockHeadEnabled" value="1" />
+			<option name="lockHeadSensitivity" value="0.05" />
+			<option name="lockHeadDistance" value="999" />
+			<option name="lockHeadDuration" value="5.0" />
+			<option name="lockHeadDelay" value="0.0" />
+			<option name="lockHeadSmoothness" value="1.5" />
+			<option name="lockHeadFOV" value="90" />
+			<option name="lockHeadTrigger" value="0.01" />
+			<option name="lockHeadAutoFire" value="1" />
+			<option name="lockHeadPriority" value="nearest" />
+			<option name="lockHeadStickiness" value="1.0" />
+			<option name="lockHeadMagnetRadius" value="100" />
+			<option name="aimLockTarget" value="head" />
+			<option name="aimAssistLevel" value="5" />
+			<option name="aimStickyForce" value="2.0" />
+			<option name="aimHeadEnabled" value="1" />
+			<option name="lockHeadEnabled" value="1" />
+			<option name="lockHeadPriority" value="head" />
+			<option name="aimLockTarget" value="head" />
+			<option name="autoLockHead" value="1" />
+			<option name="aimAssistLevel" value="4" />
+			<option name="aimStickyForce" value="2.0" />
+			<option name="lockHeadStickiness" value="1.0" />
+			<option name="lockHeadFOV" value="90" />
+			<option name="lockHeadMagnetRadius" value="100" />
+			<option name="lockHeadDistance" value="999" />
+			<option name="aimLockRange" value="1000" />
+			<option name="lockHeadSmoothness" value="1.0" />
+			<option name="lockHeadSensitivity" value="0.05" />
+			<option name="lockHeadDelay" value="0.0" />
+			<option name="lockHeadTrigger" value="0.01" />
+			<option name="lockHeadDuration" value="5.0" />
+		</headlockSettings>
+		<crosshairShakeSettings>
+			<option name="shakeReduceEnabled" value="1" />
+			<option name="crosshairStability" value="1.0" />
+			<option name="recoilControlStrength" value="1.0" />
+			<option name="vibrationFixEnabled" value="1" />
+			<option name="bulletSpreadMultiplier" value="0.0" />
+			<option name="recoilVerticalOffset" value="0.0" />
+			<option name="reticleShakeEnabled" value="0" />
+			<option name="reticleShakeIntensity" value="0.0" />
+			<option name="crosshairVibrationRate" value="0.0" />
+			<option name="shakeReduceEnabled" value="1" />
+			<option name="crosshairStability" value="1.0" />
+			<option name="recoilControlStrength" value="1.0" />
+			<option name="recoilDampingRatio" value="1.0" />
+			<option name="recoilRecoverySpeed" value="5.0" />
+			<option name="recoilVerticalOffset" value="0.0" />
+			<option name="recoilHorizontalFix" value="0.0" />
+			<option name="viewKickReduction" value="1.0" />
+			<option name="bulletSpreadMultiplier" value="0.0" />
+			<option name="vibrationFixEnabled" value="1" />
+			<option name="zeroShakeCrosshair" value="1" />
+			<option name="reticleShakeEnabled" value="0" />
+			<option name="reticleShakeIntensity" value="0.0" />
+			<option name="crosshairVibrationRate" value="0.0" />
+			<option name="crosshairStability" value="1.0" />
+			<option name="zeroShakeCrosshair" value="1" />
+			<option name="shakeReduceEnabled" value="1" />
+			<option name="recoilControlStrength" value="1.0" />
+			<option name="recoilDampingRatio" value="1.0" />
+			<option name="recoilRecoverySpeed" value="5.0" />
+			<option name="recoilVerticalOffset" value="0.0" />
+			<option name="recoilHorizontalFix" value="0.0" />
+			<option name="viewKickReduction" value="1.0" />
+			<option name="vibrationFixEnabled" value="1" />
+			<option name="centerVibrationFix" value="1" />
+		</crosshairShakeSettings>
+		<vibrationSettings>
+			<option name="reticleShakeEnabled" value="0" />
+			<option name="reticleShakeIntensity" value="0.0" />
+			<option name="crosshairVibrationRate" value="0.0" />
+			<option name="recoilDampingRatio" value="1.0" />
+			<option name="recoilRecoverySpeed" value="5.0" />
+			<option name="viewKickReduction" value="1.0" />
+		</vibrationSettings>
+		<aimDragSettings>
+			<option name="dragWeightLightEnabled" value="1" />
+			<option name="dragFrictionRatio" value="0.01" />
+			<option name="touchPullResistance" value="0.0" />
+			<option name="aimSmoothWeight" value="0.8" />
+			<option name="dragAcceleration" value="3.5" />
+			<option name="frictionReductionFactor" value="1.0" />
+		</aimDragSettings>
+		<aimWeightSettings>
+			<option name="aimWeightMode" value="dynamic" />
+			<option name="aimDragResistance" value="0.01" />
+			<option name="aimFrictionScale" value="0.1" />
+			<option name="aimWeightLightThreshold" value="0.01" />
+			<option name="aimWeightHeavyThreshold" value="0.99" />
+			<option name="touchResponseDelay" value="0.0" />
+			<option name="touchPressureSens" value="2.0" />
+		</aimWeightSettings>
+		<antiOvershootSettings>
+			<option name="overshootStopEnabled" value="1" />
+			<option name="headshotDragLimit" value="1" />
+			<option name="stopAtHeadTarget" value="1" />
+			<option name="overshootReductionFactor" value="1.0" />
+			<option name="targetHeightOffsetZ" value="0.12" />
+			<option name="overshootCorrectionDelay" value="0.0" />
+		</antiOvershootSettings>
+		<overshootSettings>
+			<option name="antiOvershootEnabled" value="1" />
+			<option name="overshootCorrectionRate" value="1.0" />
+			<option name="maxHeadBypassOffset" value="0.0" />
+			<option name="dragLimitUpperY" value="0.85" />
+			<option name="headDecelerationZone" value="25.0" />
+			<option name="snapToHeadStrength" value="1.0" />
+			<option name="overshootStopEnabled" value="1" />
+			<option name="antiOvershootEnabled" value="1" />
+			<option name="headshotDragLimit" value="1" />
+			<option name="stopAtHeadTarget" value="1" />
+			<option name="dragLimitUpperY" value="0.85" />
+			<option name="maxHeadBypassOffset" value="0.0" />
+			<option name="headDecelerationZone" value="25.0" />
+			<option name="overshootReductionFactor" value="1.0" />
+			<option name="overshootCorrectionRate" value="1.0" />
+			<option name="overshootCorrectionDelay" value="0.0" />
+			<option name="snapToHeadStrength" value="1.0" />
+			<option name="targetHeightOffsetZ" value="0.12" />
+		</overshootSettings>
+		<ultraLightAimSettings>
+			<option name="dragFrictionRatio" value="0.0" />
+			<option name="touchPullResistance" value="0.0" />
+			<option name="aimDragResistance" value="0.0" />
+			<option name="aimFrictionScale" value="0.0" />
+			<option name="dragAcceleration" value="5.0" />
+			<option name="frictionReductionFactor" value="1.0" />
+			<option name="touchResponseDelay" value="0.0" />
+			<option name="touchPressureSens" value="3.0" />
+			<option name="fastDragRate" value="2.0" />
+		</ultraLightAimSettings>
+		<sensitivitySettings>
+			<option name="touchSensitivityHigh" value="1" />
+			<option name="aimSensitivityX" value="2.5" />
+			<option name="aimSensitivityY" value="3.2" />
+			<option name="touchResponseRate" value="1000" />
+			<option name="screenTouchSpeed" value="2.0" />
+			<option name="fastDragRate" value="3.0" />
+			<option name="generalSensitivity" value="100" />
+			<option name="redDotSensitivity" value="100" />
+			<option name="scope2xSensitivity" value="100" />
+			<option name="scope4xSensitivity" value="100" />
+			<option name="sniperSensitivity" value="80" />
+			<option name="freeLookSensitivity" value="100" />
+			<option name="touchAcceleration" value="0.0" />
+		</sensitivitySettings>
+	</freefireConfig>
+	<project>
+		<!-- Khai báo kích hoạt thuật toán -->
+		<option name="acp_click=1" strings="$WRITE_REGULATOR_DATA$" />
+		<option name="on_com.dts.freefireth_launcher=1" strings="$WRITE_REGULATOR_DATA$" />
+		<option name="com.restore-device.launcher=1" strings="$WRITE_REGULATOR_DATA$" />
+		<!-- Anti-Ban & Bypass System -->
+		<option name="com.antiban.protection.status=1" strings="$WRITE_REGULATOR_DATA$" />
+		<option name="com.bypass.report.system=1" strings="$WRITE_REGULATOR_DATA$" />
+		<!-- Tác giả -->
+		<option name="NguyenTien" boolean="1" />
+	</project>
+</Asset_DataAsset>

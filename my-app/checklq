@@ -1,0 +1,172 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Check acc Liên Quân qua GraphQL API của Bảng Phong Thần.
+Chỉ tra cứu được tài khoản BỊ BAN. Acc bình thường sẽ không có kết quả.
+"""
+
+import os
+import sys
+import time
+import json
+import requests
+
+# ==================== CẤU HÌNH ====================
+GRAPHQL_URL = "https://xuphat.lienquan.garena.vn/graphql"
+
+INPUT_FILE  = "acclienquan.txt"
+OUTPUT_FILE = "checklq.txt"
+
+DELAY = 1.5
+TIMEOUT = 30
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+    "Content-Type": "application/json",
+    "Origin":  "https://xuphat.lienquan.garena.vn",
+    "Referer": "https://xuphat.lienquan.garena.vn/",
+}
+
+# ⚠️ THAY QUERY NÀY BẰNG QUERY BẠN BẮT ĐƯỢC TỪ DEVTOOLS
+GRAPHQL_QUERY = """
+query GetPunishment($keyword: String!) {
+  punishments(keyword: $keyword) {
+    uid
+    username
+    reason
+    banDuration
+    bannedAt
+  }
+}
+"""
+
+# ==================== CHECK 1 ACC ====================
+def check_one(keyword: str) -> dict:
+    """Gửi GraphQL query. Trả về dict kết quả."""
+    payload = {
+        "operationName": "GetPunishment",
+        "variables": {"keyword": keyword},
+        "query": GRAPHQL_QUERY,
+    }
+
+    try:
+        r = requests.post(
+            GRAPHQL_URL,
+            json=payload,
+            headers=HEADERS,
+            timeout=TIMEOUT,
+            verify=False,
+        )
+
+        if r.status_code != 200:
+            return {"status": "error", "message": f"HTTP {r.status_code}"}
+
+        try:
+            data = r.json()
+        except json.JSONDecodeError:
+            return {"status": "error", "message": "Response không phải JSON"}
+
+        # Kiểm tra có lỗi GraphQL không
+        if "errors" in data:
+            return {"status": "error",
+                    "message": str(data["errors"])}
+
+        # Lấy danh sách punishments
+        punishments = (data.get("data", {}) or {}).get("punishments", [])
+
+        if punishments:
+            return {"status": "banned", "data": punishments[0],
+                    "all": punishments}
+        else:
+            return {"status": "clean",
+                    "message": "Không có trong danh sách ban"}
+
+    except requests.exceptions.Timeout:
+        return {"status": "error", "message": "Timeout"}
+    except Exception as e:
+        return {"status": "error",
+                "message": f"{type(e).__name__}: {e}"}
+
+# ==================== FILE I/O ====================
+def parse_line(line):
+    line = line.strip()
+    if not line or line.startswith("#"):
+        return None
+    if "|" in line:
+        parts = line.split("|", 1)
+    elif ":" in line:
+        parts = line.split(":", 1)
+    else:
+        return None
+    u, p = parts[0].strip(), parts[1].strip()
+    return (u, p) if u and p else None
+
+def read_accounts(path):
+    if not os.path.exists(path):
+        return []
+    accs = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            p = parse_line(line)
+            if p:
+                accs.append(p)
+    return accs
+
+# ==================== MAIN ====================
+def main():
+    print("=" * 60)
+    print("  CHECK ACC LIÊN QUÂN QUA BẢNG PHONG THẦN (GraphQL)")
+    print("=" * 60)
+
+    accounts = read_accounts(INPUT_FILE)
+    if not accounts:
+        print(f"[!] File {INPUT_FILE} trống hoặc không tồn tại")
+        sys.exit(1)
+
+    total = len(accounts)
+    print(f"[+] Tổng acc: {total}\n")
+
+    stats = {"banned": 0, "clean": 0, "error": 0}
+
+    for i, (user, pwd) in enumerate(accounts, 1):
+        print(f"[{i}/{total}] Check: {user}")
+
+        result = check_one(user)
+        status = result.get("status")
+
+        if status == "banned":
+            d = result["data"]
+            print(f"  🚫 BANNED — {d.get('reason', 'N/A')}")
+            print(f"     UID: {d.get('uid', 'N/A')}")
+            print(f"     Thời hạn: {d.get('banDuration', 'N/A')}")
+            stats["banned"] += 1
+
+            # Ghi vào file output
+            with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
+                f.write(f"{user} | {pwd}   # BANNED: "
+                        f"{d.get('reason', '')} | "
+                        f"{d.get('banDuration', '')}\n")
+
+        elif status == "clean":
+            print(f"  ✅ Không có trong danh sách ban")
+            stats["clean"] += 1
+
+        else:
+            print(f"  ⚠️  Lỗi: {result.get('message', '?')}")
+            stats["error"] += 1
+
+        time.sleep(DELAY)
+
+    print("\n" + "=" * 60)
+    print("  KẾT QUẢ")
+    print("=" * 60)
+    print(f"  🚫 Bị ban     : {stats['banned']}")
+    print(f"  ✅ Không ban  : {stats['clean']}")
+    print(f"  ⚠️  Lỗi        : {stats['error']}")
+    print("=" * 60)
+
+if __name__ == "__main__":
+    main()

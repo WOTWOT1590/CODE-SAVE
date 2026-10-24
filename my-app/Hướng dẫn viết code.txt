@@ -1,0 +1,130 @@
+HƯỚNG DẪN VIẾT CODE DẠNG TXT DÙNG CHO CẤU HÌNH (FREE FIRE, SETTING, ETC.)
+
+1. PHẦN MỀM CẦN DÙNG:
+- Notepad (mặc định Windows)
+- Hoặc: Notepad++, VSCode, Sublime Text...
+
+2. CẤU TRÚC CHUNG CỦA MỘT DÒNG CODE:
+
+<build:name"tên_module"giá_trị"Key_tùy_chọn.file_code_tùy_chọn_auto_cws="giá_trị"_on.uncrack.định_dạng="true">
+
+Ví dụ:
+
+<build:name"com.act_conf_seclect_sync_setting"100"Key_act_allow.file_code_clear_cache_app_com.dts.freefireth_auto_cws="70-100"_on.uncrack.fzs="true">
+
+3. MẸO & QUY TẮC:
+- KHÔNG có dấu cách trong tên tag <build:name"...">
+- Các giá trị có thể gồm số (100, 70-100), tên module (apn, appdata, etc.)
+- Dòng có thể kết thúc bằng: .fzs="true", .so="true", .list="true", .strings="true"
+- Có thể thêm thao tác mô phỏng bên dưới:
+  F1:Touch
+  F2:TouchAndHold
+
+4. CÁCH LƯU FILE:
+- Nhấn Ctrl + S (hoặc File -> Save As...)
+- Đặt tên file: tenfile.txt (ví dụ: config_freefire.txt)
+- Save as type: All Files
+- Encoding: UTF-8 (rất quan trọng)
+
+5. VÍ DỤ ĐẦY ĐỦ:
+
+<build:name"com.unlock_max_device_set"100"_on_Key_act_allow.file_code_auto_cws="70-100".uncrack.so="true">
+F1:Touch
+
+<build:name"com.act_conf_seclect_sync_setting"100"Key_act_allow.file_code_unlock_connectInject_Aimlock_Controls_app_com.dts.freefireth_on_auto_cws="70-100".uncrack.list="true">
+F2:TouchAndHold
+
+6. CÁC LOẠI KẾT THÚC PHỔ BIẾN:
+- .so="true"
+- .fzs="true"
+- .dat="true"
+- .list="true"
+- .strings="true"
+
+7. LƯU Ý:
+- File .txt có thể chứa hàng trăm dòng như trên
+- Mỗi dòng độc lập, không cần mở/đóng tag XML
+- Đây là cấu hình dạng custom, không dùng mã hóa đặc biệt
+
+8. GIẢI THÍCH CÁC GIÁ TRỊ TRONG CÂU CODE:
+
+Ví dụ câu:
+<build:name"com.act_conf_seclect_sync_setting"100"Key_act_allow.file_code_clear_cache_app_com.dts.freefireth_auto_cws="70-100"_on.uncrack.fzs="true">
+
+Phân tích:
+
+🔹 <build:name ... > 
+=> Thẻ cấu hình mở đầu, bắt buộc, cố định
+
+🔹 com.act_conf_seclect_sync_setting
+=> Tên gói, module hoặc tính năng (ví dụ: đồng bộ cài đặt, file cấu hình, ứng dụng...)
+
+🔹 100
+=> Mức hiệu lực, cường độ hoặc phiên bản (có thể là %)
+
+🔹 Key_act_allow
+=> Phân quyền hoặc chỉ định nhóm chức năng được kích hoạt
+
+🔹 .file_code_clear_cache_app
+=> Lệnh thực hiện: ở đây là xóa bộ nhớ cache của ứng dụng
+
+🔹 _com.dts.freefireth
+=> Ứng dụng mục tiêu: ở đây là Free Fire bản thường
+
+🔹 _auto_cws="70-100"
+=> Thời gian, cường độ, hoặc khoảng delay thực thi (auto click wait speed)
+
+🔹 _on.uncrack.fzs="true"
+=> Trạng thái hoạt động:
+    - on.uncrack: bật tính năng bảo vệ/chống chỉnh sửa
+    - .fzs: đuôi file hoặc kiểu hành động (ví dụ: file script)
+    - "true": bật (false = tắt)
+
+---
+
+9. MỘT SỐ GIÁ TRỊ PHỔ BIẾN VÀ TÁC DỤNG:
+
+📌 Các loại module:
+- com.act_conf_seclect: hành động chính
+- com.acp_conf_seclect: hành động phụ hoặc nâng cao
+- com.allow_conf_seclect: cho phép truy cập hoặc điều chỉnh
+
+📌 Các mục tiêu:
+- _app_com.dts.freefireth: Free Fire thường
+- _app_com.dts.freefiremax: Free Fire MAX
+- _appdata: vùng dữ liệu người dùng
+- _system: hệ thống
+- _ram / _rom: bộ nhớ trong
+- _setting: cấu hình
+
+📌 Các lệnh thực hiện:
+- file_code_clear_cache: xóa bộ nhớ cache
+- file_code_unlock_: mở khóa tính năng
+- file_code_restore_: khôi phục
+- file_code_setting: thay đổi setting
+- connectInject_: kết nối và tiêm config
+
+📌 Các định dạng hành động:
+- .so: thực thi như thư viện hệ thống
+- .fzs: file script đặc biệt
+- .list: danh sách (cho phép / từ chối)
+- .strings: chuỗi lệnh
+- .dat: dữ liệu cứng
+- .txt / .cfg: file văn bản cấu hình
+
+📌 Các thao tác:
+- F1:Touch => click ngắn
+- F2:TouchAndHold => giữ chạm
+
+📌 Giá trị phạm vi:
+- "70-100": thời gian / tốc độ / delay từ 70ms - 100ms
+- "true": bật
+- "false": tắt
+
+---
+
+10. GỢI Ý DÒNG CODE THƯỜNG DÙNG:
+
+<build:name"com.unlock_max_device_set"100"_on_Key_act_allow.file_code_auto_cws="70-100".uncrack.so="true">
+<build:name"com.act_conf_seclect_sync_setting"100"Key_act_allow.file_code_unlock_connectInject_restore_ram_appdata_auto_cws="70-100".uncrack.fzs="true">
+<build:name"com.acp_conf_seclect_sync"100"Key_act_allow.file_code_clear_cache_apn_appmanager_auto_cws="70-100".uncrack.so="true">

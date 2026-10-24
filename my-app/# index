@@ -1,0 +1,1832 @@
+/**
+* ============================================================
+* AZURE PROXY — API server (1 file server.js, không cần npm install)
+* Viết lại hoàn toàn theo mô tả mới nhất — thay thế mọi bản trước.
+* ============================================================
+* ROUTE:
+* GET /website/admin/key/ -> web admin tạo/quản lý key
+* GET /website/admin/code/ -> web admin up code theo 10 ID (1-10)
+* POST /api/v1/check-key-server/?chanbomaydi={uidapp}
+* body: { key, device_id } -> check key
+* POST /api/v2/code-server/?id=...
+* body: { key, device_id, uidapp } -> lấy code theo ID (còn mã hoá)
+*
+* 2 ĐIỂM EM TỰ QUYẾT — nói rõ để anh chỉnh nếu không đúng ý:
+*
+* (a) BỎ LỚP KÝ HMAC VÀ SESSION_TOKEN của các bản trước. Mô tả mới không
+* nhắc tới chữ ký/token nào cả — chỉ còn key+device_id+uidapp gửi thẳng
+* mỗi lần gọi. Em làm đúng y vậy. Nếu vẫn muốn giữ lớp chống replay
+* (HMAC) hay token, báo em thêm lại — thêm được mà không phá cấu trúc
+* response đã mô tả.
+*
+* (b) QUY TẮC "ĐÚNG MẤY TRƯỜNG SAI TRẢ CHỮ GÌ" — mô tả chỉ cho 3 case sai
+* ĐÚNG 1 TRƯỜNG + case thiếu trường + case "sai hết cả 3". Case sai
+* ĐÚNG 2/3 trường không được mô tả riêng — em gộp mọi trường hợp từ
+* 2 trường sai trở lên (kể cả 3/3) chung vào "NGU À." (logic: đếm số
+* trường sai trong {key, device_id, uidapp}; 0 sai = thành công, đúng
+* 1 sai = trả đúng câu riêng cho trường đó, ≥2 sai = "NGU À."). Thiếu
+* trường được check TRƯỚC, ưu tiên cao nhất -> "THỪA.!?" bất kể các
+* trường còn lại đúng sai thế nào.
+* Lưu ý kỹ thuật: khi key không tồn tại, không có cách nào biết
+* device_id "đúng hay sai" với 1 key không tồn tại -> trường hợp này
+* device_id luôn tính là "không sai" (không đánh giá được), nên "sai
+* cả key lẫn uidapp" tối đa ra 2 sai (không bao giờ tự nhiên lên 3 sai
+* thật) — nhưng vẫn rơi đúng vào "NGU À." vì đã ≥2 sai, nên hành vi
+* cuối cùng khớp đúng ý mô tả.
+*
+* GIỮ LẠI (không có trong mô tả mới nhưng không bị yêu cầu bỏ, để hệ thống
+* không bị thụt lùi so với trước):
+* - Key có hạn (expired_at), admin khoá được (revoked).
+* - Concurrent-IP auto-lock (khoá tạm 15 phút nếu 1 key gọi từ ≥2 IP
+* trong 60s) + request_count. Cả 2 thứ này được xếp vào nhóm "lỗi do
+* key" (keyProblem) nếu dính, dùng content message riêng mô tả rõ.
+*
+* LƯU Ý QUAN TRỌNG: code trả về từ /api/v2/code-server/ VẪN GIỮ NGUYÊN MÃ
+* HOÁ AES-256-GCM+Base64 (đúng yêu cầu "GIỮ MÃ HOÁ AES KIA") — app phải tự
+* giải mã bằng đúng khoá "NMT-ADMIN-DEPZAI-NT5431" (SHA-256 ra 32 byte).
+*
+* KEY DẠNG: KEY-XXX-XXXX-XXXXX. ADMIN KEY: NMT-ADMIN-VIP-PRO-211.
+* TÊN APP: "AZURE PROXY". UID APP: "AZURE-ADMIN-SKIBIDI-5431".
+*
+* LƯU Ý RENDER: ổ đĩa ephemeral — dữ liệu JSON có thể mất khi service
+* redeploy/ngủ dài. Cần bền vững thật thì gắn Render Disk hoặc DB ngoài.
+*
+* CHẠY: node server.js (PORT do Render tự cấp)
+* ============================================================
+*/
+
+'use strict';
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { URL } = require('url');
+
+// ============================================================
+// CẤU HÌNH
+// ============================================================
+const PORT = process.env.PORT || 3000;
+const ADMIN_KEY = process.env.ADMIN_KEY || 'NMT-ADMIN-VIP-PRO-211';
+const DATA_FILE = path.join(__dirname, 'keys.json');
+const CODE_FILE = path.join(__dirname, 'server-code.json');
+const SESSION_TTL = 24 * 60 * 60 * 1000;
+const MAX_LOGIN_FAILS = 5;
+const LOGIN_LOCKOUT_MS = 60 * 1000;
+const MAX_CODE_BYTES = 300 * 1024;
+
+const CONCURRENT_IP_WINDOW_MS = 60 * 1000;
+const AUTO_LOCK_MS = 15 * 60 * 1000;
+
+const APP_DISPLAY_NAME = 'AZURE PROXY';
+const OFFICIAL_APP_UID = process.env.APP_UID || 'AZURE-ADMIN-SKIBIDI-5431';
+
+// Khoá AES-256-GCM suy ra từ passphrase (SHA-256 -> đúng 32 byte)
+const CODE_AES_PASSPHRASE = process.env.CODE_AES_PASSPHRASE || 'NMT-ADMIN-DEPZAI-NT5431';
+const CODE_AES_KEY = crypto.createHash('sha256').update(CODE_AES_PASSPHRASE, 'utf8').digest();
+
+const FILE_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// ============================================================
+// LƯU TRỮ
+// ============================================================
+function loadArray(file) {
+try { const d = JSON.parse(fs.readFileSync(file, 'utf-8')); return Array.isArray(d) ? d : []; }
+catch (e) { return []; }
+}
+function saveArray(file, arr) { fs.writeFileSync(file, JSON.stringify(arr, null, 2), 'utf-8'); }
+let keysCache = loadArray(DATA_FILE);
+let codeCache = loadArray(CODE_FILE);
+const adminSessions = new Map();
+const loginAttempts = new Map();
+const recentIpsByKey = new Map();
+
+// ============================================================
+// SINH KEY CSPRNG — dạng KEY-XXX-XXXX-XXXXX
+// ============================================================
+const KEY_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+function randGroup(len) {
+let s = '';
+for (let i = 0; i < len; i++) s +=KEY_CHARS[crypto.randomInt(0, KEY_CHARS.length)]; return s; } function
+  generateKeyRaw() { return 'KEY-' + randGroup(3) + '-' + randGroup(4) + '-' + randGroup(5); } function
+  generateUniqueKey() { let key, tries=0; do { key=generateKeyRaw(); tries++; } while (keysCache.some((k)=> k.key ===
+  key) && tries < 50); return key; } function makeKeyObject({ note, days }) { const now=Date.now(); const
+    d=parseInt(days, 10) || 0; return { key: generateUniqueKey(), note: (note || '' ).toString().slice(0, 200), revoked:
+    false, device_id: null, created_at: now, activated_at: null, expired_at: d> 0 ? now + d * 86400000 : null,
+    request_count: 0,
+    auto_lock_until: null,
+    };
+    }
+    function getEffectiveStatus(k) {
+    if (k.revoked) return 'REVOKED';
+    if (k.auto_lock_until && Date.now() < k.auto_lock_until) return 'LOCKED' ; if (k.expired_at && Date.now()>
+      k.expired_at) return 'EXPIRED';
+      if (k.device_id) return 'ACTIVE';
+      return 'UNUSED';
+      }
+      function fmtExpiration(expiredAt) {
+      if (!expiredAt) return 'Vĩnh viễn';
+      const d = new Date(expiredAt);
+      const p = (n) => (n < 10 ? '0' + n : '' + n); return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' +
+        d.getFullYear(); } //============================================================// MÃ HOÁ CODE LƯU: AES-256-GCM
+        rồi Base64 //============================================================function encryptCode(plainText) { const
+        iv=crypto.randomBytes(12); const cipher=crypto.createCipheriv('aes-256-gcm', CODE_AES_KEY, iv); const
+        enc=Buffer.concat([cipher.update(String(plainText), 'utf8' ), cipher.final()]); const
+        authTag=cipher.getAuthTag(); return Buffer.concat([iv, authTag, enc]).toString('base64'); } function
+        decryptCode(base64Combined) { const combined=Buffer.from(base64Combined, 'base64' ); const
+        iv=combined.subarray(0, 12); const authTag=combined.subarray(12, 28); const enc=combined.subarray(28); const
+        decipher=crypto.createDecipheriv('aes-256-gcm', CODE_AES_KEY, iv); decipher.setAuthTag(authTag); return
+        Buffer.concat([decipher.update(enc), decipher.final()]).toString('utf8'); } function upsertCodeEntry(fileId,
+        code) { const now=Date.now(); const encryptedCode=encryptCode(code); let entry=codeCache.find((s)=> s.fileId ===
+        fileId);
+        if (entry) { entry.encryptedCode = encryptedCode; entry.updatedAt = now; }
+        else { entry = { fileId, encryptedCode, createdAt: now, updatedAt: now }; codeCache.unshift(entry); }
+        saveArray(CODE_FILE, codeCache);
+        return entry;
+        }
+
+        // ============================================================
+        // UID APP
+        // ============================================================
+        function verifyAppUid(uidapp) {
+        if (!uidapp || uidapp.length !== OFFICIAL_APP_UID.length) return false;
+        return crypto.timingSafeEqual(Buffer.from(uidapp), Buffer.from(OFFICIAL_APP_UID));
+        }
+
+        // ============================================================
+        // LÕI KIỂM TRA key + device_id + uidapp — dùng chung API 1 và API 2
+        // Trả về:
+        // - { success:true, key:true, keyObj } khi cả 3 đều đúng
+        // - { success:true, key:false, content:"..." } khi có vấn đề
+        // ============================================================
+        function recordIpAndCheckAbuse(keyObj, ip) {
+        const now = Date.now();
+        let list = recentIpsByKey.get(keyObj.key) || [];
+        list = list.filter((e) => now - e.at < CONCURRENT_IP_WINDOW_MS); if (!list.some((e)=> e.ip === ip)) list.push({
+          ip, at: now });
+          recentIpsByKey.set(keyObj.key, list);
+          const distinctIps = new Set(list.map((e) => e.ip));
+          if (distinctIps.size >= 2) { keyObj.auto_lock_until = now + AUTO_LOCK_MS; return true; }
+          return false;
+          }
+          function checkAccess(key, deviceId, uidapp, ip) {
+          if (!key || !deviceId || !uidapp) {
+          return { success: true, key: false, content: 'THỪA.!?' };
+          }
+
+          const uidOk = verifyAppUid(uidapp);
+          const found = keysCache.find((k) => k.key === key);
+
+          let keyProblem = null;
+          if (!found) keyProblem = 'Key không tồn tại.';
+          else if (found.revoked) keyProblem = 'Key đã bị khoá.';
+          else if (found.expired_at && Date.now() > found.expired_at) keyProblem = 'Key đã hết hạn.';
+          else if (found.auto_lock_until && Date.now() < found.auto_lock_until)
+            keyProblem='Key tạm khoá do phát hiện dùng từ nhiều thiết bị/IP cùng lúc.' ; const keyOk=!keyProblem; //
+            device_id chỉ đánh giá được khi key hợp lệ (có record để so sánh) let deviceProblem=null; if (keyOk &&
+            found.device_id && found.device_id !==deviceId) { deviceProblem='Key đã kích hoạt trên thiết bị khác ' ; }
+            const deviceOk=!deviceProblem; const wrongCount=(uidOk ? 0 : 1) + (keyOk ? 0 : 1) + (deviceOk ? 0 : 1); if
+            (wrongCount>= 2) return { success: true, key: false, content: 'NGU À.' };
+            if (wrongCount === 1) {
+            if (keyProblem) return { success: true, key: false, content: keyProblem };
+            if (deviceProblem) return { success: true, key: false, content: deviceProblem };
+            return { success: true, key: false, content: 'APP ĐÃ BỊ TẬT.' };
+            }
+
+            // tất cả hợp lệ -> gắn thiết bị nếu lần đầu, tính request_count, check lạm dụng IP
+            if (!found.device_id) { found.device_id = deviceId; found.activated_at = Date.now(); }
+            const justLocked = recordIpAndCheckAbuse(found, ip);
+            if (justLocked) {
+            saveArray(DATA_FILE, keysCache);
+            return { success: true, key: false, content: 'Key tạm khoá do phát hiện dùng từ nhiều IP cùng lúc.' };
+            }
+            found.request_count = (found.request_count || 0) + 1;
+            saveArray(DATA_FILE, keysCache);
+            return { success: true, key: true, keyObj: found };
+            }
+
+            // ============================================================
+            // HTTP HELPERS
+            // ============================================================
+            function parseCookies(req) {
+            const out = {}; const header = req.headers.cookie; if (!header) return out;
+            header.split(';').forEach((part) => {
+            const idx = part.indexOf('='); if (idx === -1) return;
+            out[part.slice(0, idx).trim()] = decodeURIComponent(part.slice(idx + 1).trim());
+            });
+            return out;
+            }
+            function parseBody(req) {
+            return new Promise((resolve) => {
+            let body = ''; let tooBig = false;
+            req.on('data', (chunk) => { body += chunk; if (body.length > 1024 * 1024) { tooBig = true; req.destroy(); }
+            });
+            req.on('end', () => { if (tooBig) return resolve({}); try { resolve(body ? JSON.parse(body) : {}); } catch
+            (e) { resolve({}); } });
+            req.on('error', () => resolve({}));
+            });
+            }
+            function sendJSON(res, status, data) {
+            const body = JSON.stringify(data);
+            res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length':
+            Buffer.byteLength(body), 'Cache-Control': 'no-store' });
+            res.end(body);
+            }
+            function sendHTML(res, status, html) {
+            res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+            res.end(html);
+            }
+            function sendJS(res, status, js) {
+            res.writeHead(status, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control':
+            'no-store', 'X-Content-Type-Options': 'nosniff' });
+            res.end(js);
+            }
+            function createAdminSession() { const token = crypto.randomBytes(32).toString('hex');
+            adminSessions.set(token, { createdAt: Date.now() }); return token; }
+            function isAdminAuthed(req) {
+            if (req.headers['x-admin-key'] && req.headers['x-admin-key'] === ADMIN_KEY) return true;
+            const token = parseCookies(req).session; if (!token) return false;
+            const s = adminSessions.get(token); if (!s) return false;
+            if (Date.now() - s.createdAt > SESSION_TTL) { adminSessions.delete(token); return false; }
+            return true;
+            }
+            function getClientIp(req) { return (req.headers['x-forwarded-for'] || req.socket.remoteAddress ||
+            'unknown').split(',')[0].trim(); }
+
+            setInterval(() => {
+            const now = Date.now();
+            for (const [t, s] of adminSessions) if (now - s.createdAt > SESSION_TTL) adminSessions.delete(t);
+            for (const [ip, a] of loginAttempts) if (a.lockUntil && now > a.lockUntil && a.fails < MAX_LOGIN_FAILS)
+              loginAttempts.delete(ip); for (const [k, list] of recentIpsByKey) { const filtered=list.filter((e)=> now -
+              e.at < CONCURRENT_IP_WINDOW_MS); if (filtered.length) recentIpsByKey.set(k, filtered); else
+                recentIpsByKey.delete(k); } }, 60 * 1000).unref();
+                //============================================================// GIAO DIỆN ADMIN — GET
+                /website/admin/key/ //============================================================const
+                HTML_ADMIN_KEY=`<!DOCTYPE html>
+                <html lang="vi">
+
+                <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>AZURE PROXY KEY</title>
+                  <link rel="icon" href="data:,">
+                  <link rel="preconnect" href="https://fonts.googleapis.com">
+                  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                  <link
+                    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+                    rel="stylesheet">
+                  <style>
+                    :root {
+                      --bg: #0a0a0a;
+                      --white: #ffffff;
+                      --glass: rgba(255, 255, 255, .07);
+                      --glass-border: rgba(255, 255, 255, .16);
+                      --neon: #00f0ff;
+                      --neon2: #0066ff;
+                      --neon-glow: 0 0 22px rgba(0, 240, 255, .35);
+                      --text-0: #ffffff;
+                      --text-1: #b9c0cc;
+                      --text-2: #767e8c;
+                      --line: rgba(255, 255, 255, .12);
+                      --ok: #2bd576;
+                      --bad: #ff4d6d;
+                      --warn: #ffc107;
+                      --gray: #8a93a3;
+                      --mono: 'JetBrains Mono', monospace;
+                      --disp: 'Space Grotesk', sans-serif;
+                      --body: 'Inter', system-ui, sans-serif;
+                    }
+
+                    * {
+                      box-sizing: border-box;
+                      margin: 0;
+                      padding: 0
+                    }
+
+                    body {
+                      background: var(--bg);
+                      color: var(--text-0);
+                      font-family: var(--body);
+                      min-height: 100vh
+                    }
+
+                    body::before {
+                      content: '';
+                      position: fixed;
+                      inset: 0;
+                      z-index: -1;
+                      background: radial-gradient(ellipse 900px 500px at 15% -10%, rgba(0, 240, 255, .08), transparent 60%), radial-gradient(ellipse 800px 600px at 100% 10%, rgba(0, 102, 255, .07), transparent 60%)
+                    }
+
+                    .hidden {
+                      display: none !important
+                    }
+
+                    .glass {
+                      background: var(--glass);
+                      border: 1px solid var(--glass-border);
+                      border-radius: 16px;
+                      backdrop-filter: blur(16px)
+                    }
+
+                    ::selection {
+                      background: var(--neon);
+                      color: #00131a
+                    }
+
+                    a {
+                      color: var(--neon);
+                      text-decoration: none
+                    }
+
+                    #login-screen {
+                      min-height: 100vh;
+                      width: 100%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 24px;
+                    }
+
+                    .login-card {
+                      width: 100%;
+                      max-width: 400px;
+                      padding: 34px 30px
+                    }
+
+                    .login-card h1 {
+                      font-family: var(--disp);
+                      text-align: center;
+                      font-size: 18px;
+                      letter-spacing: .04em;
+                      margin-bottom: 6px
+                    }
+
+                    .login-card p {
+                      text-align: center;
+                      color: var(--text-2);
+                      font-size: 12px;
+                      font-family: var(--mono);
+                      margin-bottom: 24px
+                    }
+
+                    .field {
+                      margin-bottom: 14px
+                    }
+
+                    .field label {
+                      display: block;
+                      font-size: 10.5px;
+                      color: var(--text-2);
+                      margin-bottom: 6px;
+                      font-family: var(--mono);
+                      letter-spacing: .06em;
+                      text-transform: uppercase
+                    }
+
+                    .field input,
+                    .field select {
+                      width: 100%;
+                      background: #050608;
+                      border: 1px solid var(--line);
+                      color: var(--text-0);
+                      padding: 11px 13px;
+                      border-radius: 9px;
+                      font-family: var(--mono);
+                      font-size: 13px;
+                      outline: none
+                    }
+
+                    .field input:focus,
+                    .field select:focus {
+                      border-color: var(--neon)
+                    }
+
+                    .btn {
+                      padding: 11px 18px;
+                      border-radius: 9px;
+                      border: none;
+                      cursor: pointer;
+                      font-family: var(--disp);
+                      font-weight: 700;
+                      font-size: 12px;
+                      letter-spacing: .03em
+                    }
+
+                    .btn-primary {
+                      width: 100%;
+                      background: linear-gradient(135deg, var(--neon), var(--neon2));
+                      color: #00131a;
+                      box-shadow: var(--neon-glow)
+                    }
+
+                    .btn-primary:disabled {
+                      opacity: .5;
+                      cursor: not-allowed
+                    }
+
+                    .btn-outline {
+                      background: transparent;
+                      border: 1px solid var(--line);
+                      color: var(--text-1)
+                    }
+
+                    .btn-danger {
+                      background: transparent;
+                      border: 1px solid rgba(255, 77, 109, .4);
+                      color: var(--bad)
+                    }
+
+                    .btn-danger:hover {
+                      background: rgba(255, 77, 109, .1)
+                    }
+
+                    .err-text {
+                      margin-top: 12px;
+                      font-family: var(--mono);
+                      font-size: 11.5px;
+                      color: var(--bad);
+                      text-align: center;
+                      min-height: 14px
+                    }
+
+                    .topbar {
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                      padding: 16px clamp(14px, 4vw, 36px);
+                      border-bottom: 1px solid var(--line);
+                      position: sticky;
+                      top: 0;
+                      z-index: 20;
+                      background: rgba(10, 10, 10, .85);
+                      backdrop-filter: blur(10px)
+                    }
+
+                    .brand {
+                      display: flex;
+                      align-items: center;
+                      gap: 10px
+                    }
+
+                    .brand-mark {
+                      width: 30px;
+                      height: 30px;
+                      border-radius: 8px;
+                      background: linear-gradient(135deg, var(--neon), var(--neon2));
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      font-family: var(--disp);
+                      font-weight: 700;
+                      color: #00131a;
+                      box-shadow: var(--neon-glow);
+                      font-size: 13px
+                    }
+
+                    .brand b {
+                      font-family: var(--disp);
+                      letter-spacing: .03em;
+                      font-size: 14px
+                    }
+
+                    .topbar-actions {
+                      display: flex;
+                      gap: 8px;
+                      align-items: center
+                    }
+
+                    .btn-logout,
+                    .link-btn {
+                      background: transparent;
+                      border: 1px solid var(--line);
+                      color: var(--text-1);
+                      padding: 8px 14px;
+                      border-radius: 8px;
+                      cursor: pointer;
+                      font-family: var(--mono);
+                      font-size: 11px
+                    }
+
+                    .btn-logout:hover {
+                      border-color: var(--bad);
+                      color: var(--bad)
+                    }
+
+                    .link-btn:hover {
+                      border-color: var(--neon);
+                      color: var(--neon)
+                    }
+
+                    .wrap {
+                      max-width: 1280px;
+                      margin: 0 auto;
+                      padding: clamp(14px, 3vw, 32px)
+                    }
+
+                    .stats-row {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+                      gap: 12px;
+                      margin-bottom: 18px
+                    }
+
+                    .stat-card {
+                      padding: 15px 16px
+                    }
+
+                    .stat-card .num {
+                      font-family: var(--disp);
+                      font-size: 22px
+                    }
+
+                    .stat-card .lbl {
+                      font-family: var(--mono);
+                      font-size: 9.5px;
+                      color: var(--text-2);
+                      margin-top: 3px;
+                      letter-spacing: .05em;
+                      text-transform: uppercase
+                    }
+
+                    .stat-card.accent .num {
+                      color: var(--neon)
+                    }
+
+                    .stat-card.ok .num {
+                      color: var(--ok)
+                    }
+
+                    .stat-card.gray .num {
+                      color: var(--gray)
+                    }
+
+                    .stat-card.bad .num {
+                      color: var(--bad)
+                    }
+
+                    .stat-card.warn .num {
+                      color: var(--warn)
+                    }
+
+                    .panel {
+                      padding: 20px;
+                      margin-bottom: 18px
+                    }
+
+                    .panel-head {
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      margin-bottom: 14px;
+                      flex-wrap: wrap;
+                      gap: 10px
+                    }
+
+                    .panel-head h2 {
+                      font-family: var(--disp);
+                      font-size: 13px;
+                      letter-spacing: .04em
+                    }
+
+                    .panel-head h2 .n {
+                      color: var(--neon)
+                    }
+
+                    .create-form {
+                      display: flex;
+                      gap: 10px;
+                      flex-wrap: wrap;
+                      align-items: flex-end
+                    }
+
+                    .create-form .field {
+                      margin-bottom: 0;
+                      flex: 1;
+                      min-width: 140px
+                    }
+
+                    .create-form .field.small {
+                      max-width: 110px
+                    }
+
+                    .create-form button {
+                      width: auto;
+                      white-space: nowrap
+                    }
+
+                    .search-row {
+                      display: flex;
+                      gap: 10px;
+                      margin-bottom: 14px;
+                      align-items: center;
+                      flex-wrap: wrap
+                    }
+
+                    .search-row input {
+                      flex: 1;
+                      min-width: 200px;
+                      background: #050608;
+                      border: 1px solid var(--line);
+                      color: var(--text-0);
+                      padding: 10px 13px;
+                      border-radius: 9px;
+                      font-family: var(--mono);
+                      font-size: 12px;
+                      outline: none
+                    }
+
+                    .bulk-bar {
+                      display: none;
+                      align-items: center;
+                      gap: 12px;
+                      background: rgba(0, 240, 255, .06);
+                      border: 1px solid rgba(0, 240, 255, .3);
+                      padding: 10px 14px;
+                      border-radius: 10px;
+                      margin-bottom: 12px;
+                      font-family: var(--mono);
+                      font-size: 12px
+                    }
+
+                    .bulk-bar.show {
+                      display: flex
+                    }
+
+                    table {
+                      width: 100%;
+                      border-collapse: collapse
+                    }
+
+                    thead th {
+                      text-align: left;
+                      font-family: var(--mono);
+                      font-size: 9.5px;
+                      letter-spacing: .06em;
+                      text-transform: uppercase;
+                      color: var(--text-2);
+                      padding: 0 8px 10px;
+                      border-bottom: 1px solid var(--line);
+                      white-space: nowrap
+                    }
+
+                    tbody td {
+                      padding: 10px 8px;
+                      border-bottom: 1px solid rgba(255, 255, 255, .06);
+                      font-size: 11.5px;
+                      vertical-align: middle
+                    }
+
+                    tbody tr:hover {
+                      background: rgba(0, 240, 255, .03)
+                    }
+
+                    .key-code {
+                      font-family: var(--mono);
+                      font-size: 11.5px;
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 6px
+                    }
+
+                    .copy-btn {
+                      background: transparent;
+                      border: 1px solid var(--line);
+                      color: var(--text-2);
+                      width: 22px;
+                      height: 22px;
+                      border-radius: 6px;
+                      cursor: pointer;
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0
+                    }
+
+                    .copy-btn:hover {
+                      border-color: var(--neon);
+                      color: var(--neon)
+                    }
+
+                    .copy-btn svg {
+                      width: 11px;
+                      height: 11px
+                    }
+
+                    .note-cell {
+                      color: var(--text-1);
+                      max-width: 200px;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      white-space: nowrap;
+                      font-size: 11px
+                    }
+
+                    .device-cell {
+                      font-family: var(--mono);
+                      font-size: 10.5px;
+                      color: var(--text-2);
+                      max-width: 150px;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      white-space: nowrap
+                    }
+
+                    .badge {
+                      font-family: var(--mono);
+                      font-size: 9.5px;
+                      letter-spacing: .04em;
+                      padding: 3px 8px;
+                      border-radius: 99px;
+                      text-transform: uppercase;
+                      white-space: nowrap
+                    }
+
+                    .badge.ACTIVE {
+                      background: rgba(43, 213, 118, .1);
+                      color: var(--ok);
+                      border: 1px solid rgba(43, 213, 118, .35)
+                    }
+
+                    .badge.UNUSED {
+                      background: rgba(138, 147, 163, .1);
+                      color: var(--gray);
+                      border: 1px solid rgba(138, 147, 163, .35)
+                    }
+
+                    .badge.REVOKED {
+                      background: rgba(255, 77, 109, .1);
+                      color: var(--bad);
+                      border: 1px solid rgba(255, 77, 109, .35)
+                    }
+
+                    .badge.EXPIRED {
+                      background: rgba(255, 193, 7, .1);
+                      color: var(--warn);
+                      border: 1px solid rgba(255, 193, 7, .35)
+                    }
+
+                    .badge.LOCKED {
+                      background: rgba(255, 140, 0, .12);
+                      color: #ff8c00;
+                      border: 1px solid rgba(255, 140, 0, .4)
+                    }
+
+                    .row-actions {
+                      display: flex;
+                      gap: 5px;
+                      flex-wrap: wrap
+                    }
+
+                    .mini-btn {
+                      background: transparent;
+                      border: 1px solid var(--line);
+                      color: var(--text-2);
+                      padding: 5px 9px;
+                      border-radius: 6px;
+                      cursor: pointer;
+                      font-family: var(--mono);
+                      font-size: 9.5px;
+                      white-space: nowrap
+                    }
+
+                    .mini-btn:hover {
+                      border-color: var(--neon);
+                      color: var(--neon)
+                    }
+
+                    .mini-btn.danger:hover {
+                      border-color: var(--bad);
+                      color: var(--bad)
+                    }
+
+                    .empty-row {
+                      text-align: center;
+                      padding: 30px;
+                      color: var(--text-2);
+                      font-family: var(--mono);
+                      font-size: 12px
+                    }
+
+                    #toast-wrap {
+                      position: fixed;
+                      bottom: 20px;
+                      right: 20px;
+                      z-index: 999;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 8px
+                    }
+
+                    .toast {
+                      font-family: var(--mono);
+                      font-size: 12px;
+                      padding: 11px 16px;
+                      border-radius: 9px;
+                      background: #0d0e12;
+                      border: 1px solid var(--glass-border);
+                      max-width: 320px
+                    }
+
+                    .toast.ok {
+                      border-color: rgba(43, 213, 118, .5)
+                    }
+
+                    .toast.err {
+                      border-color: rgba(255, 77, 109, .5)
+                    }
+                  </style>
+                </head>
+
+                <body>
+
+                  <div id="login-screen">
+                    <div class="glass login-card">
+                      <h1>AZURE PROXY KEY</h1>
+                      <p>//VUI LÒNG ĐĂNG NHẬP</p>
+                      <form id="login-form">
+                        <div class="field"><label>Key</label><input type="password" id="login-key" required></div>
+                        <button type="submit" class="btn btn-primary" id="login-btn">ĐĂNG NHẬP</button>
+                        <div class="err-text" id="login-err"></div>
+                      </form>
+                    </div>
+                  </div>
+
+                  <div id="dashboard-screen" class="hidden">
+                    <div class="topbar">
+                      <div class="brand">
+                        <div class="brand-mark">T</div><b>AZURE PROXY KEY</b>
+                      </div>
+                      <div class="topbar-actions">
+                        <a class="link-btn" href="/website/admin/code/">SERVER CODE</a>
+                        <button class="btn-logout" id="logout-btn">ĐĂNG XUẤT</button>
+                      </div>
+                    </div>
+
+                    <div class="wrap">
+                      <div class="stats-row">
+                        <div class="glass stat-card accent">
+                          <div class="num" id="stat-total">0</div>
+                          <div class="lbl">Tổng key</div>
+                        </div>
+                        <div class="glass stat-card ok">
+                          <div class="num" id="stat-active">0</div>
+                          <div class="lbl">Active</div>
+                        </div>
+                        <div class="glass stat-card gray">
+                          <div class="num" id="stat-unused">0</div>
+                          <div class="lbl">Unused</div>
+                        </div>
+                        <div class="glass stat-card bad">
+                          <div class="num" id="stat-revoked">0</div>
+                          <div class="lbl">Revoked</div>
+                        </div>
+                        <div class="glass stat-card warn">
+                          <div class="num" id="stat-expired">0</div>
+                          <div class="lbl">Expired</div>
+                        </div>
+                        <div class="glass stat-card" style="color:#ff8c00">
+                          <div class="num" id="stat-locked">0</div>
+                          <div class="lbl">Locked</div>
+                        </div>
+                      </div>
+
+                      <div class="glass panel">
+                        <div class="panel-head">
+                          <h2>+ TẠO KEY MỚI</h2>
+                        </div>
+                        <form id="create-form" class="create-form">
+                          <div class="field"><label>Ghi chú / Mô tả key</label><input type="text" id="note-input"
+                              placeholder="VD: Khách A"></div>
+                          <div class="field small"><label>Hạn (ngày, 0=vĩnh viễn)</label><input type="number"
+                              id="days-input" min="0" value="30"></div>
+                          <button type="submit" class="btn btn-primary" id="create-btn">TẠO KEY</button>
+                        </form>
+                      </div>
+
+                      <div class="glass panel">
+                        <div class="panel-head">
+                          <h2>DANH SÁCH KEY <span class="n" id="list-count">(0)</span></h2>
+                        </div>
+                        <div class="search-row">
+                          <input type="text" id="search-input" placeholder="Tìm theo key / ghi chú / device_id...">
+                        </div>
+                        <div class="bulk-bar" id="bulk-bar">
+                          <span id="bulk-count">Đã chọn 0 key</span>
+                          <button class="btn btn-danger" style="width:auto" id="bulk-delete-btn">XOÁ CÁC KEY ĐÃ
+                            CHỌN</button>
+                          <button class="btn btn-outline" style="width:auto" id="bulk-clear-btn">Bỏ chọn</button>
+                        </div>
+                        <div style="overflow-x:auto">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th><input type="checkbox" id="select-all-cb"></th>
+                                <th>Key</th>
+                                <th>Ghi chú</th>
+                                <th>Trạng thái</th>
+                                <th>Device ID</th>
+                                <th>Số lần gọi</th>
+                                <th>Hết hạn</th>
+                                <th>Thao tác</th>
+                              </tr>
+                            </thead>
+                            <tbody id="key-table-body"></tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="toast-wrap"></div>
+                  <script src="/assets/adminkey.js" defer></script>
+                </body>
+
+                </html>`;
+
+                const JS_ADMIN_KEY = `(function(){"use strict";
+                function $(id){return document.getElementById(id);}
+                function toast(msg,type){
+                var el=document.createElement("div");el.className="toast
+                "+(type||"");el.textContent=msg;$("toast-wrap").appendChild(el);
+                setTimeout(function(){el.style.opacity="0";el.style.transition="opacity
+                .3s";setTimeout(function(){el.remove();},300);},2800);
+                }
+                function esc(str){return String(str).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">
+                    ":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+                    function fmtDate(ts){ if(!ts)return "—"; var d=new Date(ts); function p(n){return n<10?"0"+n:""+n;}
+                      return p(d.getDate())+"/"+p(d.getMonth()+1)+"/"+d.getFullYear()+" "+p(d.getHours())+"
+                      :"+p(d.getMinutes()); } function
+                      showLogin(){$("login-screen").classList.remove("hidden");$("dashboard-screen").classList.add("hidden");}
+                      function
+                      showDashboard(){$("login-screen").classList.add("hidden");$("dashboard-screen").classList.remove("hidden");}
+                      var allKeys=[]; var selected={}; var searchTerm="" ; function apiGetKeys(){ return
+                      fetch("/api/admin/keys",{credentials:"same-origin"}).then(function(r){
+                      if(r.status===401){showLogin();return null;} return r.json(); }).then(function(data){
+                      if(!data)return; allKeys=data.keys||[]; showDashboard(); renderKeys(); }); } function
+                      computeStats(){ var s={total:allKeys.length,ACTIVE:0,UNUSED:0,REVOKED:0,EXPIRED:0,LOCKED:0};
+                      allKeys.forEach(function(k){ if(s[k.status]!==undefined) s[k.status]++; }); return s; } function
+                      filteredKeys(){ if(!searchTerm) return allKeys; var t=searchTerm.toLowerCase(); return
+                      allKeys.filter(function(k){ return k.key.toLowerCase().indexOf(t)!==-1 ||
+                      (k.note||"").toLowerCase().indexOf(t)!==-1 || (k.device_id||"").toLowerCase().indexOf(t)!==-1; });
+                      } function renderKeys(){ var s=computeStats(); $("stat-total").textContent=s.total;
+                      $("stat-active").textContent=s.ACTIVE; $("stat-unused").textContent=s.UNUSED;
+                      $("stat-revoked").textContent=s.REVOKED; $("stat-expired").textContent=s.EXPIRED;
+                      $("stat-locked").textContent=s.LOCKED; var list=filteredKeys(); $("list-count").textContent="("
+                      +list.length+")"; var body=$("key-table-body"); if(!list.length){
+                      body.innerHTML='<tr><td colspan="8" class="empty-row">Không có key nào phù hợp</td></tr>' ;
+                      renderBulkBar(); return; } body.innerHTML=list.map(function(k){ var deviceTxt=k.device_id?('<span
+                      title="'+esc(k.device_id)+'">'+esc(k.device_id)+'</span>'):'<span style="color:var(--text-2)">Chưa
+                        kích hoạt</span>';
+                      var checked=selected[k.key]?" checked":"";
+                      var revokeLabel=k.revoked?"MỞ KHOÁ":"KHOÁ";
+                      return (
+                      '<tr>'+
+                        '<td><input type="checkbox" class="row-cb" data-key="'+esc(k.key)+'"'+checked+'></td>'+
+                        '<td><span class="key-code">'+esc(k.key)+
+                            '<button class="copy-btn" data-copy="'+esc(k.key)+'" title="Copy key">'+
+                              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="12" height="12" rx="2"></rect>
+                                <path d="M5 15V5a2 2 0 0 1 2-2h10"></path>
+                              </svg>'+
+                              '</button></span></td>'+
+                        '<td class="note-cell" title="'+esc(k.note||"")+'">'+esc(k.note||"—")+'</td>'+
+                        '<td><span class="badge '+k.status+'">'+k.status+'</span></td>'+
+                        '<td class="device-cell">'+deviceTxt+'</td>'+
+                        '<td style="font-family:var(--mono);text-align:center">'+(k.request_count||0)+'</td>'+
+                        '<td style="font-size:10.5px;color:var(--text-2)">'+(k.expired_at?fmtDate(k.expired_at):"Vĩnh
+                          viễn")+'</td>'+
+                        '<td>
+                          <div class="row-actions">'+
+                            '<button class="mini-btn" data-revoke="'+esc(k.key)+'" data-state="'+(k.revoked?"
+                              1":"0")+'">'+revokeLabel+'</button>'+
+                            '<button class="mini-btn" data-reset="'+esc(k.key)+'"'+(k.device_id?"":" disabled")+'>RESET
+                              THIẾT BỊ</button>'+
+                            '<button class="mini-btn danger" data-del="'+esc(k.key)+'">XOÁ</button>'+
+                            '</div>
+                        </td>'+
+                        '</tr>'
+                      );
+                      }).join("");
+                      renderBulkBar();
+                      }
+                      function renderBulkBar(){
+                      var count=Object.keys(selected).filter(function(k){return selected[k];}).length;
+                      $("bulk-bar").classList.toggle("show", count>0);
+                      $("bulk-count").textContent="Đã chọn "+count+" key";
+                      var visibleKeys=filteredKeys().map(function(k){return k.key;});
+                      var allChecked=visibleKeys.length>0 && visibleKeys.every(function(k){return !!selected[k];});
+                      $("select-all-cb").checked=allChecked;
+                      }
+
+                      $("key-table-body").addEventListener("change",function(e){
+                      var cb=e.target.closest(".row-cb"); if(!cb)return;
+                      var key=cb.getAttribute("data-key");
+                      if(cb.checked) selected[key]=true; else delete selected[key];
+                      renderBulkBar();
+                      });
+                      $("select-all-cb").addEventListener("change",function(e){
+                      var checked=e.target.checked;
+                      filteredKeys().forEach(function(k){ if(checked) selected[k.key]=true; else delete selected[k.key];
+                      });
+                      renderKeys();
+                      });
+                      $("bulk-clear-btn").addEventListener("click",function(){ selected={}; renderKeys(); });
+                      $("bulk-delete-btn").addEventListener("click",function(){
+                      var keys=Object.keys(selected).filter(function(k){return selected[k];});
+                      if(!keys.length)return;
+                      if(!confirm("Xoá "+keys.length+" key đã chọn? Không thể hoàn tác."))return;
+                      fetch("/api/admin/keys/bulk-delete",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({keys:keys})})
+                      .then(function(r){return r.json();})
+                      .then(function(res){
+                      if(res.success){ toast("Đã xoá "+res.deletedCount+" key","ok"); selected={}; apiGetKeys(); }
+                      else toast(res.message||"Xoá thất bại","err");
+                      }).catch(function(){ toast("Lỗi kết nối tới server","err"); });
+                      });
+
+                      $("key-table-body").addEventListener("click",function(e){
+                      var copyBtn=e.target.closest("[data-copy]");
+                      if(copyBtn){
+                      navigator.clipboard.writeText(copyBtn.getAttribute("data-copy")).then(function(){toast("Đã copy
+                      key","ok");}).catch(function(){toast("Copy thất bại","err");});
+                      return;
+                      }
+                      var revokeBtn=e.target.closest("[data-revoke]");
+                      if(revokeBtn){
+                      var key=revokeBtn.getAttribute("data-revoke");
+                      var newState=revokeBtn.getAttribute("data-state")==="0";
+                      fetch("/api/admin/keys/"+encodeURIComponent(key)+"/revoke",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({revoked:newState})})
+                      .then(function(r){return r.json();})
+                      .then(function(res){ if(res.success){ toast(newState?"Đã khoá key":"Đã mở khoá key","ok");
+                      apiGetKeys(); } else toast(res.message||"Lỗi","err"); });
+                      return;
+                      }
+                      var resetBtn=e.target.closest("[data-reset]");
+                      if(resetBtn){
+                      var key2=resetBtn.getAttribute("data-reset");
+                      if(!confirm("Reset thiết bị cho key "+key2+"? Key sẽ có thể kích hoạt lại trên máy khác."))return;
+                      fetch("/api/admin/keys/"+encodeURIComponent(key2)+"/reset-device",{method:"POST",credentials:"same-origin"})
+                      .then(function(r){return r.json();})
+                      .then(function(res){ if(res.success){ toast("Đã reset thiết bị","ok"); apiGetKeys(); } else
+                      toast(res.message||"Lỗi","err"); });
+                      return;
+                      }
+                      var delBtn=e.target.closest("[data-del]");
+                      if(delBtn){
+                      var key3=delBtn.getAttribute("data-del");
+                      if(!confirm("Xoá key "+key3+"?"))return;
+                      fetch("/api/admin/keys/"+encodeURIComponent(key3),{method:"DELETE",credentials:"same-origin"})
+                      .then(function(r){return r.json();})
+                      .then(function(res){ if(res.success){ delete selected[key3]; toast("Đã xoá key","ok");
+                      apiGetKeys(); } else toast(res.message||"Lỗi","err"); });
+                      }
+                      });
+
+                      $("search-input").addEventListener("input",function(e){ searchTerm=e.target.value; renderKeys();
+                      });
+
+                      $("create-form").addEventListener("submit",function(e){
+                      e.preventDefault();
+                      var note=$("note-input").value.trim(); var days=parseInt($("days-input").value,10)||0;
+                      var btn=$("create-btn"); btn.disabled=true; btn.textContent="ĐANG TẠO...";
+                      fetch("/api/admin/keys",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({note:note,days:days})})
+                      .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
+                      .then(function(res){
+                      btn.disabled=false; btn.textContent="TẠO KEY";
+                      if(res.ok&&res.data.success){ toast("Đã tạo key: "+res.data.key.key,"ok");
+                      $("note-input").value=""; apiGetKeys(); }
+                      else toast(res.data.message||"Tạo key thất bại","err");
+                      }).catch(function(){ btn.disabled=false; btn.textContent="TẠO KEY"; toast("Lỗi kết nối tới
+                      server","err"); });
+                      });
+
+                      $("login-form").addEventListener("submit",function(e){
+                      e.preventDefault();
+                      var key=$("login-key").value.trim(); var btn=$("login-btn"); btn.disabled=true;
+                      btn.textContent="ĐANG XÁC THỰC...";
+                      fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({key:key})})
+                      .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
+                      .then(function(res){
+                      btn.disabled=false; btn.textContent="ĐĂNG NHẬP";
+                      if(res.ok&&res.data.success){ $("login-err").textContent=""; apiGetKeys(); }
+                      else $("login-err").textContent=res.data.message||"Sai admin key";
+                      }).catch(function(){ btn.disabled=false; btn.textContent="ĐĂNG NHẬP";
+                      $("login-err").textContent="Lỗi kết nối tới server"; });
+                      });
+                      $("logout-btn").addEventListener("click",function(){
+                      fetch("/api/admin/logout",{method:"POST",credentials:"same-origin"}).then(function(){ showLogin();
+                      $("login-key").value=""; });
+                      });
+
+                      apiGetKeys().catch(function(){ showLogin(); });
+                      })();`;
+
+                      // ============================================================
+                      // GIAO DIỆN ADMIN — GET /website/admin/code/
+                      // "1 bảng cho chọn file theo ID" — 10 ID cố định (1-10), mỗi ID = 1 file code.
+                      // ============================================================
+                      const HTML_ADMIN_CODE = `
+                      <!DOCTYPE html>
+                      <html lang="vi">
+
+                      <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>AZURE PROXY // Up Code</title>
+                        <link rel="icon" href="data:,">
+                        <link rel="preconnect" href="https://fonts.googleapis.com">
+                        <link
+                          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+                          rel="stylesheet">
+                        <style>
+                          :root {
+                            --bg: #0a0a0a;
+                            --glass: rgba(255, 255, 255, .055);
+                            --glass-border: rgba(255, 255, 255, .14);
+                            --neon: #00f0ff;
+                            --neon2: #0066ff;
+                            --neon-glow: 0 0 22px rgba(0, 240, 255, .35);
+                            --text-0: #ffffff;
+                            --text-1: #b9c0cc;
+                            --text-2: #767e8c;
+                            --line: rgba(255, 255, 255, .12);
+                            --ok: #2bd576;
+                            --bad: #ff4d6d;
+                            --mono: 'JetBrains Mono', monospace;
+                            --disp: 'Space Grotesk', sans-serif;
+                          }
+
+                          * {
+                            box-sizing: border-box;
+                            margin: 0;
+                            padding: 0
+                          }
+
+                          body {
+                            background: var(--bg);
+                            color: var(--text-0);
+                            font-family: var(--mono);
+                            min-height: 100vh
+                          }
+
+                          body::before {
+                            content: '';
+                            position: fixed;
+                            inset: 0;
+                            z-index: -1;
+                            background: radial-gradient(ellipse 900px 500px at 15% -10%, rgba(0, 240, 255, .10), transparent 60%)
+                          }
+
+                          .hidden {
+                            display: none !important
+                          }
+
+                          .glass {
+                            background: var(--glass);
+                            border: 1px solid var(--glass-border);
+                            border-radius: 14px;
+                            backdrop-filter: blur(16px)
+                          }
+
+                          a {
+                            color: var(--neon);
+                            text-decoration: none
+                          }
+
+                          #login-screen {
+                            min-height: 100vh;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            padding: 24px;
+                            text-align: center
+                          }
+
+                          #login-screen .glass {
+                            padding: 30px;
+                            max-width: 380px
+                          }
+
+                          #login-screen h1 {
+                            font-family: var(--disp);
+                            font-size: 16px;
+                            margin-bottom: 14px
+                          }
+
+                          #login-screen input {
+                            width: 100%;
+                            background: #050608;
+                            border: 1px solid var(--line);
+                            color: #fff;
+                            padding: 11px;
+                            border-radius: 8px;
+                            margin-bottom: 12px;
+                            font-family: var(--mono)
+                          }
+
+                          .btn {
+                            padding: 11px 18px;
+                            border-radius: 8px;
+                            border: none;
+                            cursor: pointer;
+                            font-family: var(--disp);
+                            font-weight: 700;
+                            font-size: 12px
+                          }
+
+                          .btn-primary {
+                            width: 100%;
+                            background: linear-gradient(135deg, var(--neon), var(--neon2));
+                            color: #00131a
+                          }
+
+                          .err-text {
+                            color: var(--bad);
+                            font-size: 11px;
+                            margin-top: 8px;
+                            min-height: 14px
+                          }
+
+                          .topbar {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            padding: 14px 24px;
+                            border-bottom: 1px solid var(--line);
+                            position: sticky;
+                            top: 0;
+                            background: rgba(10, 10, 10, .9);
+                            z-index: 10
+                          }
+
+                          .topbar b {
+                            font-family: var(--disp);
+                            font-size: 14px
+                          }
+
+                          .wrap {
+                            max-width: 1100px;
+                            margin: 0 auto;
+                            padding: 20px;
+                            display: grid;
+                            grid-template-columns: 260px 1fr;
+                            gap: 16px
+                          }
+
+                          @media(max-width:780px) {
+                            .wrap {
+                              grid-template-columns: 1fr
+                            }
+                          }
+
+                          .id-table {
+                            padding: 0;
+                            overflow: hidden
+                          }
+
+                          .id-table-head {
+                            padding: 14px 16px;
+                            border-bottom: 1px solid var(--line);
+                            font-family: var(--disp);
+                            font-size: 11px;
+                            letter-spacing: .06em;
+                            color: var(--text-2);
+                            text-transform: uppercase
+                          }
+
+                          .id-row {
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                            width: 100%;
+                            background: transparent;
+                            border: none;
+                            border-bottom: 1px solid rgba(255, 255, 255, .06);
+                            color: var(--text-1);
+                            padding: 12px 16px;
+                            cursor: pointer;
+                            font-family: var(--mono);
+                            font-size: 12.5px;
+                            text-align: left
+                          }
+
+                          .id-row:last-child {
+                            border-bottom: none
+                          }
+
+                          .id-row:hover {
+                            background: rgba(0, 240, 255, .05)
+                          }
+
+                          .id-row.active {
+                            background: rgba(0, 240, 255, .09);
+                            color: var(--neon)
+                          }
+
+                          .id-row .num {
+                            width: 26px;
+                            height: 26px;
+                            border-radius: 7px;
+                            background: #050608;
+                            border: 1px solid var(--line);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-weight: 700;
+                            flex-shrink: 0
+                          }
+
+                          .id-row.active .num {
+                            border-color: var(--neon);
+                            color: var(--neon)
+                          }
+
+                          .id-row .fname {
+                            flex: 1
+                          }
+
+                          .id-row .dot {
+                            width: 7px;
+                            height: 7px;
+                            border-radius: 50%;
+                            background: var(--ok);
+                            visibility: hidden
+                          }
+
+                          .id-row.has-code .dot {
+                            visibility: visible
+                          }
+
+                          .editor-panel {
+                            padding: 16px;
+                            display: flex;
+                            flex-direction: column;
+                            min-height: 520px
+                          }
+
+                          .editor-head {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 10px;
+                            flex-wrap: wrap;
+                            gap: 8px
+                          }
+
+                          .editor-head .title {
+                            font-size: 12px;
+                            color: var(--text-1)
+                          }
+
+                          .editor-head .title b {
+                            color: var(--neon)
+                          }
+
+                          textarea {
+                            flex: 1;
+                            width: 100%;
+                            background: #050608;
+                            border: 1px solid var(--line);
+                            color: #7dfcff;
+                            padding: 14px;
+                            border-radius: 10px;
+                            font-family: var(--mono);
+                            font-size: 12.5px;
+                            line-height: 1.6;
+                            resize: vertical;
+                            min-height: 400px;
+                            outline: none
+                          }
+
+                          textarea:focus {
+                            border-color: var(--neon)
+                          }
+
+                          .btn-row {
+                            display: flex;
+                            gap: 10px;
+                            margin-top: 12px;
+                            flex-wrap: wrap
+                          }
+
+                          .btn-row .btn {
+                            width: auto
+                          }
+
+                          .btn-outline {
+                            background: transparent;
+                            border: 1px solid var(--line);
+                            color: var(--text-1)
+                          }
+
+                          .hint {
+                            color: var(--text-2);
+                            font-size: 10.5px;
+                            margin-top: 10px;
+                            line-height: 1.6
+                          }
+
+                          #toast-wrap {
+                            position: fixed;
+                            bottom: 20px;
+                            right: 20px;
+                            z-index: 999;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 8px
+                          }
+
+                          .toast {
+                            font-size: 11.5px;
+                            padding: 10px 15px;
+                            border-radius: 8px;
+                            background: #0d0e12;
+                            border: 1px solid var(--glass-border);
+                            max-width: 300px
+                          }
+
+                          .toast.ok {
+                            border-color: rgba(43, 213, 118, .5)
+                          }
+
+                          .toast.err {
+                            border-color: rgba(255, 77, 109, .5)
+                          }
+                        </style>
+                      </head>
+
+                      <body>
+
+                        <div id="login-screen">
+                          <div class="glass">
+                            <h1>ĐĂNG NHẬP ADMIN</h1>
+                            <p style="color:var(--text-2);font-size:11px;margin-bottom:14px">Dùng chung tài khoản với
+                              trang quản trị key</p>
+                            <form id="login-form">
+                              <input type="password" id="login-key" placeholder="Admin key" required>
+                              <button type="submit" class="btn btn-primary">ĐĂNG NHẬP</button>
+                              <div class="err-text" id="login-err"></div>
+                            </form>
+                          </div>
+                        </div>
+
+                        <div id="main-screen" class="hidden">
+                          <div class="topbar">
+                            <b>📦 UP CODE — CHỌN FILE THEO ID</b>
+                            <a href="/website/admin/key/">← Về trang quản lý key</a>
+                          </div>
+                          <div class="wrap">
+                            <div class="glass id-table">
+                              <div class="id-table-head">10 FILE (ID 1-10)</div>
+                              <div id="id-list"></div>
+                            </div>
+                            <div class="glass editor-panel">
+                              <div class="editor-head">
+                                <div class="title">Đang soạn: <b id="current-label">—</b></div>
+                                <div class="title" id="updated-label"></div>
+                              </div>
+                              <textarea id="code-area" placeholder="Nhập code cho file này..."
+                                spellcheck="false"></textarea>
+                              <div class="btn-row">
+                                <button class="btn btn-primary" style="width:auto" id="save-btn">LƯU (mã hoá
+                                  AES-256-GCM)</button>
+                                <button class="btn btn-outline" id="clear-btn">XOÁ TRẮNG Ô SOẠN</button>
+                                <button class="btn btn-outline" id="delete-btn">XOÁ FILE ĐÃ LƯU</button>
+                              </div>
+                              <div class="hint">Code lưu trên server luôn ở dạng mã hoá AES-256-GCM rồi Base64. App lấy
+                                code qua /api/v2/code-server/ — SERVER TRẢ VỀ NGUYÊN BẢN MÃ HOÁ, app phải tự giải mã
+                                bằng đúng khoá bí mật đã cấu hình.</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div id="toast-wrap"></div>
+                        <script src="/assets/admincode.js" defer></script>
+                      </body>
+
+                      </html>`;
+
+                      const JS_ADMIN_CODE = `(function(){"use strict";
+                      function $(id){return document.getElementById(id);}
+                      function toast(msg,type){
+                      var el=document.createElement("div");el.className="toast
+                      "+(type||"");el.textContent=msg;$("toast-wrap").appendChild(el);
+                      setTimeout(function(){el.style.opacity="0";el.style.transition="opacity
+                      .3s";setTimeout(function(){el.remove();},300);},2600);
+                      }
+                      function fmtDate(ts){ if(!ts)return ""; var d=new Date(ts); function p(n){return n<10?"0"+n:""+n;}
+                        return p(d.getDate())+"/"+p(d.getMonth()+1)+" "+p(d.getHours())+" :"+p(d.getMinutes()); }
+                        function
+                        showLogin(){$("login-screen").classList.remove("hidden");$("main-screen").classList.add("hidden");}
+                        function
+                        showMain(){$("login-screen").classList.add("hidden");$("main-screen").classList.remove("hidden");}
+                        var FILE_IDS=[1,2,3,4,5,6,7,8,9,10]; var allSnippets=[], currentId=null; function
+                        renderIdList(){ $("id-list").innerHTML=FILE_IDS.map(function(i){ var
+                        has=allSnippets.some(function(s){return s.id===i;}); return '<button class="id-row' +(has?"
+                        has-code":"")+'" data-id="'+i+'"><span class="num">'+i+'</span><span class="fname">File
+                          '+i+'</span><span class="dot"></span></button>';
+                        }).join("");
+                        }
+                        function refreshActive(){
+                        document.querySelectorAll("[data-id]").forEach(function(b){ b.classList.toggle("active",
+                        parseInt(b.getAttribute("data-id"),10)===currentId); });
+                        $("current-label").textContent="File "+currentId;
+                        }
+                        $("id-list").addEventListener("click",function(e){
+                        var b=e.target.closest("[data-id]"); if(!b)return;
+                        currentId=parseInt(b.getAttribute("data-id"),10);
+                        loadCurrent();
+                        });
+
+                        function loadCurrent(){
+                        refreshActive();
+                        var found=allSnippets.find(function(s){return s.id===currentId;});
+                        $("code-area").value=found?(found.code||""):"";
+                        $("updated-label").textContent=found?("Cập nhật: "+fmtDate(found.updatedAt)):"Chưa có code cho
+                        file này";
+                        }
+
+                        $("save-btn").addEventListener("click",function(){
+                        if(!currentId){ toast("Chọn 1 file (ID) trước","err"); return; }
+                        var code=$("code-area").value;
+                        var btn=$("save-btn"); btn.disabled=true; btn.textContent="ĐANG LƯU...";
+                        fetch("/api/admin/server-code",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",
+                        body:JSON.stringify({id:currentId,code:code})})
+                        .then(function(r){return r.json();})
+                        .then(function(res){
+                        btn.disabled=false; btn.textContent="LƯU (mã hoá AES-256-GCM)";
+                        if(res.success){
+                        toast("Đã mã hoá AES-256-GCM + Base64 và lưu","ok");
+                        var found=allSnippets.find(function(s){return s.id===currentId;});
+                        if(found){ found.code=code; found.updatedAt=res.updatedAt; } else {
+                        allSnippets.push({id:currentId,code:code,updatedAt:res.updatedAt}); }
+                        renderIdList(); refreshActive();
+                        $("updated-label").textContent="Cập nhật: "+fmtDate(res.updatedAt);
+                        } else toast(res.message||"Lưu thất bại","err");
+                        }).catch(function(){ btn.disabled=false; btn.textContent="LƯU (mã hoá AES-256-GCM)"; toast("Lỗi
+                        kết nối tới server","err"); });
+                        });
+                        $("clear-btn").addEventListener("click",function(){ $("code-area").value=""; });
+                        $("delete-btn").addEventListener("click",function(){
+                        if(!currentId)return;
+                        var found=allSnippets.find(function(s){return s.id===currentId;});
+                        if(!found){ toast("Chưa có code nào để xoá cho file này","err"); return; }
+                        if(!confirm("Xoá code đã lưu cho File "+currentId+"?"))return;
+                        fetch("/api/admin/server-code/"+currentId,{method:"DELETE",credentials:"same-origin"}).then(function(r){return
+                        r.json();})
+                        .then(function(res){
+                        if(res.success){
+                        toast("Đã xoá","ok"); $("code-area").value="";
+                        allSnippets=allSnippets.filter(function(s){return s.id!==currentId;});
+                        renderIdList(); refreshActive(); $("updated-label").textContent="Chưa có code cho file này";
+                        } else toast(res.message||"Lỗi","err");
+                        });
+                        });
+
+                        $("login-form").addEventListener("submit",function(e){
+                        e.preventDefault();
+                        var key=$("login-key").value.trim();
+                        fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({key:key})})
+                        .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
+                        .then(function(res){
+                        if(res.ok&&res.data.success){ $("login-err").textContent=""; init(); }
+                        else $("login-err").textContent=res.data.message||"Sai admin key";
+                        }).catch(function(){ $("login-err").textContent="Lỗi kết nối tới server"; });
+                        });
+
+                        function init(){
+                        fetch("/api/admin/server-code",{credentials:"same-origin"}).then(function(r){
+                        if(r.status===401){ showLogin(); return null; }
+                        return r.json();
+                        }).then(function(res){
+                        if(!res)return;
+                        allSnippets=res.snippets||[];
+                        renderIdList();
+                        currentId=1;
+                        showMain(); loadCurrent();
+                        }).catch(function(){ showLogin(); });
+                        }
+                        init();
+                        })();`;
+
+                        // ============================================================
+                        // ROUTING
+                        // ============================================================
+                        const server = http.createServer(async (req, res) => {
+                        try {
+                        const parsedUrl = new URL(req.url, 'http://' + (req.headers.host || 'localhost'));
+                        const pathname = decodeURIComponent(parsedUrl.pathname);
+                        const method = req.method;
+                        const ip = getClientIp(req);
+
+                        // ---------- trang tĩnh ----------
+                        if (method === 'GET' && (pathname === '/website/admin/key' || pathname ===
+                        '/website/admin/key/')) {
+                        return sendHTML(res, 200, HTML_ADMIN_KEY);
+                        }
+                        if (method === 'GET' && pathname === '/assets/adminkey.js') return sendJS(res, 200,
+                        JS_ADMIN_KEY);
+                        if (method === 'GET' && (pathname === '/website/admin/code' || pathname ===
+                        '/website/admin/code/')) {
+                        return sendHTML(res, 200, HTML_ADMIN_CODE);
+                        }
+                        if (method === 'GET' && pathname === '/assets/admincode.js') return sendJS(res, 200,
+                        JS_ADMIN_CODE);
+                        if (method === 'GET' && pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
+                        if (method === 'GET' && pathname === '/') {
+                        return sendHTML(res, 200, '
+                        <!DOCTYPE html>
+                        <html>
+
+                        <body
+                          style="background:#0a0a0a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;gap:16px">
+                          <a href="/website/admin/key/" style="color:#00f0ff">Trang tạo key →</a><a
+                            href="/website/admin/code/" style="color:#00f0ff">Trang up code →</a>
+                        </body>
+
+                        </html>');
+                        }
+
+                        // ---------- API 1: check key ----------
+                        // POST /api/v1/check-key-server/?chanbomaydi={uidapp} body: { key, device_id }
+                        if (method === 'POST' && pathname === '/api/v1/check-key-server/') {
+                        const uidapp = parsedUrl.searchParams.get('chanbomaydi') || '';
+                        const body = await parseBody(req);
+                        const key = (body.key || '').toString().trim();
+                        const deviceId = (body.device_id || '').toString().trim();
+
+                        const result = checkAccess(key, deviceId, uidapp, ip);
+                        if (!result.key) return sendJSON(res, 200, { success: result.success, key: false, content:
+                        result.content });
+
+                        return sendJSON(res, 200, {
+                        success: true,
+                        key: true,
+                        device_id: result.keyObj.device_id,
+                        expiration_time: fmtExpiration(result.keyObj.expired_at),
+                        });
+                        }
+
+                        // ---------- API 2: lấy code theo ID (CÒN MÃ HOÁ) ----------
+                        // POST /api/v2/code-server/?id=... body: { key, device_id, uidapp }
+                        if (method === 'POST' && pathname === '/api/v2/code-server/') {
+                        const idParam = parsedUrl.searchParams.get('id');
+                        const body = await parseBody(req);
+                        const key = (body.key || '').toString().trim();
+                        const deviceId = (body.device_id || '').toString().trim();
+                        const uidapp = (body.uidapp || '').toString().trim();
+
+                        const result = checkAccess(key, deviceId, uidapp, ip);
+                        if (!result.key) return sendJSON(res, 200, { success: result.success, key: false, content:
+                        result.content });
+
+                        const fid = parseInt(idParam, 10);
+                        if (!FILE_IDS.includes(fid)) {
+                        return sendJSON(res, 200, { success: true, key: true, id: idParam, code: null, content: 'ID
+                        không hợp lệ (chỉ 1-10).' });
+                        }
+                        const entry = codeCache.find((s) => s.fileId === fid);
+                        if (!entry) {
+                        return sendJSON(res, 200, { success: true, key: true, id: fid, code: null, content: 'Chưa có
+                        code lưu cho ID này.' });
+                        }
+                        // trả nguyên bản mã hoá AES-256-GCM+Base64 — KHÔNG giải mã ở đây
+                        return sendJSON(res, 200, { success: true, key: true, id: fid, code: entry.encryptedCode });
+                        }
+
+                        // ---------- ADMIN: login/logout ----------
+                        if (method === 'POST' && pathname === '/api/admin/login') {
+                        const attempt = loginAttempts.get(ip) || { fails: 0, lockUntil: 0 };
+                        if (attempt.lockUntil && Date.now() < attempt.lockUntil) { return sendJSON(res, 429, { success:
+                          false, message: 'Thử lại sau ' + Math.ceil((attempt.lockUntil - Date.now()) / 1000) + 's' });
+                          } const body=await parseBody(req); if (body.key===ADMIN_KEY) { loginAttempts.delete(ip); const
+                          token=createAdminSession(); res.setHeader('Set-Cookie', 'session=' + token
+                          + '; HttpOnly; Path=/; Max-Age=' + Math.floor(SESSION_TTL / 1000) + '; SameSite=Strict' );
+                          return sendJSON(res, 200, { success: true }); } attempt.fails +=1; if (attempt.fails>=
+                          MAX_LOGIN_FAILS) { attempt.lockUntil = Date.now() + LOGIN_LOCKOUT_MS; attempt.fails = 0; }
+                          loginAttempts.set(ip, attempt);
+                          return sendJSON(res, 401, { success: false, message: 'Sai admin key' });
+                          }
+                          if (method === 'POST' && pathname === '/api/admin/logout') {
+                          const cookies = parseCookies(req);
+                          if (cookies.session) adminSessions.delete(cookies.session);
+                          res.setHeader('Set-Cookie', 'session=; HttpOnly; Path=/; Max-Age=0');
+                          return sendJSON(res, 200, { success: true });
+                          }
+
+                          // ---------- ADMIN: quản lý key ----------
+                          if (pathname.indexOf('/api/admin/keys') === 0) {
+                          if (!isAdminAuthed(req)) return sendJSON(res, 401, { success: false, message: 'Chưa đăng nhập
+                          hoặc phiên hết hạn' });
+
+                          if (method === 'GET' && pathname === '/api/admin/keys') {
+                          const out = keysCache.map((k) => Object.assign({}, k, { status: getEffectiveStatus(k) }));
+                          return sendJSON(res, 200, { success: true, keys: out });
+                          }
+                          if (method === 'POST' && pathname === '/api/admin/keys') {
+                          const body = await parseBody(req);
+                          const newKey = makeKeyObject({ note: body.note, days: body.days });
+                          keysCache.unshift(newKey);
+                          saveArray(DATA_FILE, keysCache);
+                          return sendJSON(res, 201, { success: true, key: Object.assign({}, newKey, { status:
+                          getEffectiveStatus(newKey) }) });
+                          }
+                          if (method === 'POST' && pathname === '/api/admin/keys/bulk-delete') {
+                          const body = await parseBody(req);
+                          const targets = Array.isArray(body.keys) ? body.keys : [];
+                          const before = keysCache.length;
+                          keysCache = keysCache.filter((k) => !targets.includes(k.key));
+                          const deletedCount = before - keysCache.length;
+                          saveArray(DATA_FILE, keysCache);
+                          return sendJSON(res, 200, { success: true, deletedCount });
+                          }
+                          if (method === 'POST' && pathname.endsWith('/revoke')) {
+                          const key = decodeURIComponent(pathname.slice('/api/admin/keys/'.length,
+                          -('/revoke'.length)));
+                          const found = keysCache.find((k) => k.key === key);
+                          if (!found) return sendJSON(res, 404, { success: false, message: 'Không tìm thấy key' });
+                          const body = await parseBody(req);
+                          found.revoked = !!body.revoked;
+                          saveArray(DATA_FILE, keysCache);
+                          return sendJSON(res, 200, { success: true, key: Object.assign({}, found, { status:
+                          getEffectiveStatus(found) }) });
+                          }
+                          if (method === 'POST' && pathname.endsWith('/reset-device')) {
+                          const key = decodeURIComponent(pathname.slice('/api/admin/keys/'.length,
+                          -('/reset-device'.length)));
+                          const found = keysCache.find((k) => k.key === key);
+                          if (!found) return sendJSON(res, 404, { success: false, message: 'Không tìm thấy key' });
+                          found.device_id = null;
+                          found.activated_at = null;
+                          found.auto_lock_until = null;
+                          recentIpsByKey.delete(key);
+                          saveArray(DATA_FILE, keysCache);
+                          return sendJSON(res, 200, { success: true, key: Object.assign({}, found, { status:
+                          getEffectiveStatus(found) }) });
+                          }
+                          if (method === 'DELETE' && pathname.startsWith('/api/admin/keys/')) {
+                          const target = decodeURIComponent(pathname.slice('/api/admin/keys/'.length));
+                          const idx = keysCache.findIndex((k) => k.key === target);
+                          if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Không tìm thấy key' });
+                          keysCache.splice(idx, 1);
+                          saveArray(DATA_FILE, keysCache);
+                          return sendJSON(res, 200, { success: true });
+                          }
+                          }
+
+                          // ---------- ADMIN: quản lý code theo ID ----------
+                          if (pathname.indexOf('/api/admin/server-code') === 0) {
+                          if (!isAdminAuthed(req)) return sendJSON(res, 401, { success: false, message: 'Chưa đăng nhập
+                          hoặc phiên hết hạn' });
+
+                          if (method === 'GET' && pathname === '/api/admin/server-code') {
+                          const out = codeCache.map((s) => {
+                          let code = ''; try { code = decryptCode(s.encryptedCode); } catch (e) { code = ''; }
+                          return { id: s.fileId, code, updatedAt: s.updatedAt };
+                          });
+                          return sendJSON(res, 200, { success: true, snippets: out });
+                          }
+                          if (method === 'POST' && pathname === '/api/admin/server-code') {
+                          const body = await parseBody(req);
+                          const fid = parseInt(body.id, 10);
+                          const code = (body.code || '').toString();
+                          if (!FILE_IDS.includes(fid)) return sendJSON(res, 400, { success: false, message: 'ID không
+                          hợp lệ (1-10)' });
+                          if (Buffer.byteLength(code, 'utf-8') > MAX_CODE_BYTES) return sendJSON(res, 400, { success:
+                          false, message: 'Code quá dài (tối đa ~300KB)' });
+                          const entry = upsertCodeEntry(fid, code);
+                          return sendJSON(res, 200, { success: true, id: entry.fileId, updatedAt: entry.updatedAt });
+                          }
+                          if (method === 'DELETE' && pathname.startsWith('/api/admin/server-code/')) {
+                          const fid = parseInt(pathname.slice('/api/admin/server-code/'.length), 10);
+                          const idx = codeCache.findIndex((s) => s.fileId === fid);
+                          if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Chưa có code cho ID này'
+                          });
+                          codeCache.splice(idx, 1);
+                          saveArray(CODE_FILE, codeCache);
+                          return sendJSON(res, 200, { success: true });
+                          }
+                          }
+
+                          return sendJSON(res, 404, { success: false, message: 'Not found' });
+                          } catch (err) {
+                          console.error(err);
+                          return sendJSON(res, 500, { success: false, message: 'Server error' });
+                          }
+                          });
+
+                          server.listen(PORT, '0.0.0.0', () => {
+                          console.log('============================================================');
+                          console.log(' ' + APP_DISPLAY_NAME + ' đang chạy tại cổng: ' + PORT);
+                          console.log(' Trang tạo key : /website/admin/key/');
+                          console.log(' Trang up code : /website/admin/code/');
+                          console.log(' API 1 (check) : POST /api/v1/check-key-server/?chanbomaydi=<uidapp>
+                            body:{key,device_id}');
+                            console.log(' API 2 (code) : POST /api/v2/code-server/?id=1..10
+                            body:{key,device_id,uidapp}');
+                            console.log(' Admin key : ' + ADMIN_KEY + ' (đổi qua env ADMIN_KEY)');
+                            console.log(' UID app : "' + OFFICIAL_APP_UID + '" (đổi qua env APP_UID)');
+                            console.log(' AES passphrase : "' + CODE_AES_PASSPHRASE + '" -> SHA-256 thành khoá 32 byte
+                            (đổi qua env CODE_AES_PASSPHRASE)');
+                            console.log('============================================================');
+                            });

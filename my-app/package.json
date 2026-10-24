@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "vgpu": "^0.6.0"
+  }
+}

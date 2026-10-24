@@ -1,0 +1,60 @@
+TẠO API SERVER THEO MÔ TẢ
+Server sẽ có:
+GET / website / admin / key / (WEB ĐỂ ADMIN TẠO KEY)
+GET / website / admin / code / (WEB ĐỂ ADMIN UP CODE LÊN SERVER)
+POST / api / v1 / check - key - server / (Check Key) (App sẽ gửi lên server Key mà người dùng nhập, device_id, uiapp)
+POST / api / v2 / code - server / (Lấy code về app theo id) (App sẽ gửi key ngd nhập, , device_id, uiapp, id code muốn lấy về)
+Chi Tiết Api:
+POST / api / v1 / check - key - server / (GỬI THÊM KEY NGD NHẬP VÀ DEVICE_ID, UIDAPP) (ĐÚNG CẢ 3)
+{
+  "success": true / false,
+    "key": { key },
+  "expiration_time": XX / XX / XXXX,
+}
+POST / api / v2 / code - server / (GỬI THÊM KEY, DEVICE_ID, UIDAPP) (ĐÚNG CẢ 3)
+{
+  "success": true / false,
+    "code_funciton1": ".........",
+      "code_funciton2": ".........",
+        "code_funciton3": ".........",
+          "code_funciton4": ".........",
+            "code_funciton5": ".........",
+              "code_funciton6": ".........",
+                "code_funciton7": ".........",
+                  "code_funciton8": ".........",
+                    "code_funciton9": ".........",
+                      "code_funciton10": ".........",
+}
+# NẾU API #
+  +, Nếu sai key hoặc device_id
+{
+  "success": false,
+    "content": "Key sai.",
+}
+
++, Nếu sai uidapp
+{
+  "success": false,
+    "content": "APP ĐÃ BỊ TẬT.",
+}
++, Nếu thiếu 1 trong 3(key, device_id, uidapp)
+{
+  "success": false,
+    "content": "THỪA.!?",
+}
++, Nếu sai hết cả 3(SAI HẾT CẢ 3)
+{
+  "success": false,
+    "content": "NGU À.",
+}
+
+### LƯU Ý ###
+Server key chỉ nhận lễnh từ web giao diện app, không nhận từ bên khác.
+KHI TẠO KEY, KEY SẼ CÓ DẠNG "KEY-XXX-XXXX-XXXXX"(random kí tự A - Z, 0 - 9, có thể >= 10 kí tự & < 16 kí tự)
+KEY ĐỂ TRUY CẬP VÔ WEBSITE TẠO KEY, WEBSITE UP CODE "NMT-ADMIN-VIP-PRO-211"
+TÊN APP ≠ UIDAPP:
+TÊN APP "AZURE PROXY"
+UID APP "AZURE-ADMIN-SKIBIDI-5431" 
+CÓ NHỮNG ID CODE: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10(TƯƠNG ĐƯƠNG 10 FILE)
+SAU KHI VÔ GIAO DIỆN UP CODE CHÍNH THÌ CÓ 1 BẢNG CHO CHỌN FILE THEO ID VÀ KHI LƯU FILE SERVER SẼ MÃ HOÁ AES - 256 - GCM(KHOÁ BẢO MẬT: "NMT-ADMIN-DEPZAI-NT5431", KHI LẤY CODE CODE VẪN MÃ HOÁ THEO KHÓA BẢO MẬT).
+Máy chủ Node.js tự kiểm tra Database, tự chạy các logic tính toán, tự tạo ra cấu trúc giao diện.Sau khi mọi thứ xong xuôi, nó chỉ nhả ra một cục HTML tĩnh gửi về trình duyệt.Người dùng F12 lên chỉ thấy các thẻ < div >, <li> chứa chữ, hoàn toàn không có một dòng logic JS nào để bẻ khóa.

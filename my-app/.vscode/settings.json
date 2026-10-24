@@ -1,0 +1,10 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit",
+    "source.sortMembers": "explicit"
+  },
+  "workbench.colorTheme": "GitHub Dark Default",
+  "editor.fontSize": 12,
+  "window.autoDetectColorScheme": true
+}
