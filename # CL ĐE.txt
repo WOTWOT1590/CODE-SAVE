@@ -1,0 +1,721 @@
+GIAO DIỆN TẠO KEY:
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZURE PROXY // Admin Key</title>
+    <link rel="icon" href="data:,">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, .07);
+            --glass-border: rgba(255, 255, 255, .16);
+            --neon: #00f0ff;
+            --neon2: #0066ff;
+            --neon-glow: 0 0 22px rgba(0, 240, 255, .35);
+            --text-0: #ffffff;
+            --text-1: #b9c0cc;
+            --text-2: #767e8c;
+            --line: rgba(255, 255, 255, .12);
+            --ok: #2bd576;
+            --bad: #ff4d6d;
+            --warn: #ffc107;
+            --gray: #8a93a3;
+            --mono: 'JetBrains Mono', monospace;
+            --disp: 'Space Grotesk', sans-serif;
+            --body: 'Inter', system-ui, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-0);
+            font-family: var(--body);
+            min-height: 100vh
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: radial-gradient(ellipse 900px 500px at 15% -10%, rgba(0, 240, 255, .08), transparent 60%), radial-gradient(ellipse 800px 600px at 100% 10%, rgba(0, 102, 255, .07), transparent 60%)
+        }
+
+        .hidden {
+            display: none !important
+        }
+
+        .glass {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(16px)
+        }
+
+        ::selection {
+            background: var(--neon);
+            color: #00131a
+        }
+
+        a {
+            color: var(--neon);
+            text-decoration: none
+        }
+
+        #login-screen {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 34px 30px
+        }
+
+        .login-card h1 {
+            font-family: var(--disp);
+            text-align: center;
+            font-size: 18px;
+            letter-spacing: .04em;
+            margin-bottom: 6px
+        }
+
+        .login-card p {
+            text-align: center;
+            color: var(--text-2);
+            font-size: 12px;
+            font-family: var(--mono);
+            margin-bottom: 24px
+        }
+
+        .field {
+            margin-bottom: 14px
+        }
+
+        .field label {
+            display: block;
+            font-size: 10.5px;
+            color: var(--text-2);
+            margin-bottom: 6px;
+            font-family: var(--mono);
+            letter-spacing: .06em;
+            text-transform: uppercase
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            background: #050608;
+            border: 1px solid var(--line);
+            color: var(--text-0);
+            padding: 11px 13px;
+            border-radius: 9px;
+            font-family: var(--mono);
+            font-size: 13px;
+            outline: none
+        }
+
+        .field input:focus,
+        .field select:focus {
+            border-color: var(--neon)
+        }
+
+        .btn {
+            padding: 11px 18px;
+            border-radius: 9px;
+            border: none;
+            cursor: pointer;
+            font-family: var(--disp);
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: .03em
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--neon), var(--neon2));
+            color: #00131a;
+            box-shadow: var(--neon-glow)
+        }
+
+        .btn-primary:disabled {
+            opacity: .5;
+            cursor: not-allowed
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--text-1)
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid rgba(255, 77, 109, .4);
+            color: var(--bad)
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 77, 109, .1)
+        }
+
+        .err-text {
+            margin-top: 12px;
+            font-family: var(--mono);
+            font-size: 11.5px;
+            color: var(--bad);
+            text-align: center;
+            min-height: 14px
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px clamp(14px, 4vw, 36px);
+            border-bottom: 1px solid var(--line);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(10, 10, 10, .85);
+            backdrop-filter: blur(10px)
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .brand-mark {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--neon), var(--neon2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--disp);
+            font-weight: 700;
+            color: #00131a;
+            box-shadow: var(--neon-glow);
+            font-size: 13px
+        }
+
+        .brand b {
+            font-family: var(--disp);
+            letter-spacing: .03em;
+            font-size: 14px
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .btn-logout,
+        .link-btn {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--text-1);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--mono);
+            font-size: 11px
+        }
+
+        .btn-logout:hover {
+            border-color: var(--bad);
+            color: var(--bad)
+        }
+
+        .link-btn:hover {
+            border-color: var(--neon);
+            color: var(--neon)
+        }
+
+        .wrap {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: clamp(14px, 3vw, 32px)
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px
+        }
+
+        .stat-card {
+            padding: 15px 16px
+        }
+
+        .stat-card .num {
+            font-family: var(--disp);
+            font-size: 22px
+        }
+
+        .stat-card .lbl {
+            font-family: var(--mono);
+            font-size: 9.5px;
+            color: var(--text-2);
+            margin-top: 3px;
+            letter-spacing: .05em;
+            text-transform: uppercase
+        }
+
+        .stat-card.accent .num {
+            color: var(--neon)
+        }
+
+        .stat-card.ok .num {
+            color: var(--ok)
+        }
+
+        .stat-card.gray .num {
+            color: var(--gray)
+        }
+
+        .stat-card.bad .num {
+            color: var(--bad)
+        }
+
+        .stat-card.warn .num {
+            color: var(--warn)
+        }
+
+        .panel {
+            padding: 20px;
+            margin-bottom: 18px
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px
+        }
+
+        .panel-head h2 {
+            font-family: var(--disp);
+            font-size: 13px;
+            letter-spacing: .04em
+        }
+
+        .panel-head h2 .n {
+            color: var(--neon)
+        }
+
+        .create-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end
+        }
+
+        .create-form .field {
+            margin-bottom: 0;
+            flex: 1;
+            min-width: 140px
+        }
+
+        .create-form .field.small {
+            max-width: 110px
+        }
+
+        .create-form button {
+            width: auto;
+            white-space: nowrap
+        }
+
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .search-row input {
+            flex: 1;
+            min-width: 200px;
+            background: #050608;
+            border: 1px solid var(--line);
+            color: var(--text-0);
+            padding: 10px 13px;
+            border-radius: 9px;
+            font-family: var(--mono);
+            font-size: 12px;
+            outline: none
+        }
+
+        .bulk-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 240, 255, .06);
+            border: 1px solid rgba(0, 240, 255, .3);
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-family: var(--mono);
+            font-size: 12px
+        }
+
+        .bulk-bar.show {
+            display: flex
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        thead th {
+            text-align: left;
+            font-family: var(--mono);
+            font-size: 9.5px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--text-2);
+            padding: 0 8px 10px;
+            border-bottom: 1px solid var(--line);
+            white-space: nowrap
+        }
+
+        tbody td {
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
+            font-size: 11.5px;
+            vertical-align: middle
+        }
+
+        tbody tr:hover {
+            background: rgba(0, 240, 255, .03)
+        }
+
+        .key-code {
+            font-family: var(--mono);
+            font-size: 11.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--text-2);
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0
+        }
+
+        .copy-btn:hover {
+            border-color: var(--neon);
+            color: var(--neon)
+        }
+
+        .copy-btn svg {
+            width: 11px;
+            height: 11px
+        }
+
+        .note-cell {
+            color: var(--text-1);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 11px
+        }
+
+        .device-cell {
+            font-family: var(--mono);
+            font-size: 10.5px;
+            color: var(--text-2);
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .badge {
+            font-family: var(--mono);
+            font-size: 9.5px;
+            letter-spacing: .04em;
+            padding: 3px 8px;
+            border-radius: 99px;
+            text-transform: uppercase;
+            white-space: nowrap
+        }
+
+        .badge.ACTIVE {
+            background: rgba(43, 213, 118, .1);
+            color: var(--ok);
+            border: 1px solid rgba(43, 213, 118, .35)
+        }
+
+        .badge.UNUSED {
+            background: rgba(138, 147, 163, .1);
+            color: var(--gray);
+            border: 1px solid rgba(138, 147, 163, .35)
+        }
+
+        .badge.REVOKED {
+            background: rgba(255, 77, 109, .1);
+            color: var(--bad);
+            border: 1px solid rgba(255, 77, 109, .35)
+        }
+
+        .badge.EXPIRED {
+            background: rgba(255, 193, 7, .1);
+            color: var(--warn);
+            border: 1px solid rgba(255, 193, 7, .35)
+        }
+
+        .badge.LOCKED {
+            background: rgba(255, 140, 0, .12);
+            color: #ff8c00;
+            border: 1px solid rgba(255, 140, 0, .4)
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap
+        }
+
+        .mini-btn {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--text-2);
+            padding: 5px 9px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--mono);
+            font-size: 9.5px;
+            white-space: nowrap
+        }
+
+        .mini-btn:hover {
+            border-color: var(--neon);
+            color: var(--neon)
+        }
+
+        .mini-btn.danger:hover {
+            border-color: var(--bad);
+            color: var(--bad)
+        }
+
+        .empty-row {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-2);
+            font-family: var(--mono);
+            font-size: 12px
+        }
+
+        #toast-wrap {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .toast {
+            font-family: var(--mono);
+            font-size: 12px;
+            padding: 11px 16px;
+            border-radius: 9px;
+            background: #0d0e12;
+            border: 1px solid var(--glass-border);
+            max-width: 320px
+        }
+
+        .toast.ok {
+            border-color: rgba(43, 213, 118, .5)
+        }
+
+        .toast.err {
+            border-color: rgba(255, 77, 109, .5)
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="login-screen">
+        <div class="glass login-card">
+            <h1>AZURE PROXY</h1>
+            <p>// ADMIN KEY — VUI LÒNG ĐĂNG NHẬP</p>
+            <form id="login-form">
+                <div class="field"><label>Admin Key</label><input type="password" id="login-key" required></div>
+                <button type="submit" class="btn btn-primary" id="login-btn">ĐĂNG NHẬP</button>
+                <div class="err-text" id="login-err"></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-screen" class="hidden">
+        <div class="topbar">
+            <div class="brand">
+                <div class="brand-mark">A</div><b>AZURE PROXY — ADMIN KEY</b>
+            </div>
+            <div class="topbar-actions">
+                <a class="link-btn" href="/website/admin/code/">LÊN CODE</a>
+                <button class="btn-logout" id="logout-btn">ĐĂNG XUẤT</button>
+            </div>
+        </div>
+
+        <div class="wrap">
+            <div class="stats-row">
+                <div class="glass stat-card accent">
+                    <div class="num" id="stat-total">0</div>
+                    <div class="lbl">Tổng key</div>
+                </div>
+                <div class="glass stat-card ok">
+                    <div class="num" id="stat-active">0</div>
+                    <div class="lbl">Active</div>
+                </div>
+                <div class="glass stat-card gray">
+                    <div class="num" id="stat-unused">0</div>
+                    <div class="lbl">Unused</div>
+                </div>
+                <div class="glass stat-card bad">
+                    <div class="num" id="stat-revoked">0</div>
+                    <div class="lbl">Revoked</div>
+                </div>
+                <div class="glass stat-card warn">
+                    <div class="num" id="stat-expired">0</div>
+                    <div class="lbl">Expired</div>
+                </div>
+                <div class="glass stat-card" style="color:#ff8c00">
+                    <div class="num" id="stat-locked">0</div>
+                    <div class="lbl">Locked</div>
+                </div>
+            </div>
+
+            <div class="glass panel">
+                <div class="panel-head">
+                    <h2>+ TẠO KEY MỚI</h2>
+                </div>
+                <form id="create-form" class="create-form">
+                    <div class="field"><label>Ghi chú / Mô tả key</label><input type="text" id="note-input"
+                            placeholder="VD: Khách A"></div>
+                    <div class="field small"><label>Hạn (ngày, 0=vĩnh viễn)</label><input type="number" id="days-input"
+                            min="0" value="30"></div>
+                    <button type="submit" class="btn btn-primary" id="create-btn">TẠO KEY</button>
+                </form>
+            </div>
+
+            <div class="glass panel">
+                <div class="panel-head">
+                    <h2>DANH SÁCH KEY <span class="n" id="list-count">(0)</span></h2>
+                </div>
+                <div class="search-row">
+                    <input type="text" id="search-input" placeholder="Tìm theo key / ghi chú / device_id...">
+                </div>
+                <div class="bulk-bar" id="bulk-bar">
+                    <span id="bulk-count">Đã chọn 0 key</span>
+                    <button class="btn btn-danger" style="width:auto" id="bulk-delete-btn">XOÁ CÁC KEY ĐÃ CHỌN</button>
+                    <button class="btn btn-outline" style="width:auto" id="bulk-clear-btn">Bỏ chọn</button>
+                </div>
+                <div style="overflow-x:auto">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all-cb"></th>
+                                <th>Key</th>
+                                <th>Ghi chú</th>
+                                <th>Trạng thái</th>
+                                <th>Device ID</th>
+                                <th>Số lần gọi</th>
+                                <th>Hết hạn</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="key-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-wrap"></div>
+    <script src="/assets/script.js" defer></script>
+</body>
+
+</html>
+
+
+TẠO API SERVER THEO MÔ TẢ
+Server sẽ có:
+GET /website/admin/key/ (WEB ĐỂ ADMIN TẠO KEY)(ADMIN CÓ THỂ GIA HẠN NGÀY THÊM CHO KEY,TẠO KEY MỚI,KHÓA KEY,XÓA KEY,COPY KEY,ĐẶT GHI CHÚ KEY)
+POST /api/v1/check/key/ (API CHECK KEY) (GỬI KEY NG DÙNG NHẬP, DEVICE_ID TRONG BODY)
+- HTTP 200 - Success
+{
+  "success": true,
+  "expired_at": "2026-11-19T20:15:32Z",
+  "device_id": "8a3f...c12",
+  "device_count": 1,
+  "max_devices": 1
+}
+
+- HTTP 200 - Key sai / device sai (cùng message để chống enumeration)
+{
+  "success": false,
+  "content": "Key không hợp lệ hoặc thiết bị không đúng."
+}
+
+- HTTP 429 - Rate limit
+{
+  "success": false,
+  "content": "Quá nhiều yêu cầu. Thử lại sau 60 giây."
+}
+
+- HTTP 400 - Thiếu field
+{
+  "success": false,
+  "content": "Thiếu."
+}
+# LƯU Ý #
+KEY ĐỂ ĐẶNG NHẬP VÔ WEBSITE KEY: "NMT-ADMIN-VIP-PRO-211"
+Máy chủ Node.js tự kiểm tra Database, tự chạy các logic tính toán, tự tạo ra cấu trúc giao diện.Sau khi mọi thứ xong xuôi, nó chỉ nhả ra một cục HTML tĩnh gửi về trình duyệt.Người dùng F12 lên chỉ thấy các thẻ < div>, <li> chứa chữ, hoàn toàn không có một dòng logic JS nào để bẻ khóa.
+Server chỉ nhận dữ liệu gửi đi từ app và console admin (có trong website tạo key admin), ngoài ra không nhận ở đâu khác và Rate limit theo IP (	15 req / phút / IP),Rate-limit login: 5 lần sai → khoá IP 30 phút, Thêm HMAC signature.
+Key Khi tạo có Định dạng Key ngẫu nhiên từ 10 đến 15 ký tự random từ a-z,0-9
+XXXX-XXXX-XX
+XXX-XX-XXXXX-X
+.....

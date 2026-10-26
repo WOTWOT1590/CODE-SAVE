@@ -2,12 +2,13 @@
 Tên app: NTIEN VECAR 
 Dev & Admin: Nguyễn Tiến
 Link:
-+ Zalo:
-+ Facebook: 
++ Zalo: https://zalo.me/84818709994
++ Facebook: https://www.facebook.com/ntien5431
 # GIAO DIỆN 
-Phong cách: Tối giản, Sang Trọng, Sạch sẽ, Cyberpuck, Gaming
+Phong cách: Tối giản, Sang Trọng, Sạch sẽ, Cyberpuck, Gaming (Có lưới hình vuông ở all giao diện, mờ nhưng vẫn đủ nhìn rõ thôi)
 Màu chủ đạo:
-#080B10, #10151D, #39A9FF, #ffffff, #03ffdd, #ff0000, #b700ff
+#080B10, #585b61 (nền dark), #39A9FF, #ffffffce (nền light) , #03ffdd, #ff0000, #ffbb00, #0750ee (màu lưới, làm nhẹ)
+
 Lưu ý:
 Có chế độ Light Mode (Nền sáng), Nền tối (Dark Mode)
 # CẤU TRÚC 
@@ -20,7 +21,6 @@ Chi tiết all giao diện
 - Hiển thị logo, tên app
 - Nút Mở game, FF, FFMAX 
 - Nút chuyển đến link facebook, zalo dev/admin
-- Nút chuyển đến link group facebook, zalo dev/admin
 + Giao diện Function
 - Có 7 Chức năng:
 Tối ưu máy
@@ -51,11 +51,11 @@ Api: ""
 │        Nhập key để tiếp tục        │
 │                                    │
 │ ┌────────────────────────────────┐ │
-│ │ 🔑  XXX-XXX-XXXX-XXX           │ │
+│ │ 🔑  Nhập Key...                │ │
 │ └────────────────────────────────┘ │
 │                                    │
 │ ┌────────────────────────────────┐ │
-│ │           KÍCH HOẠT            │ │
+│ │           Đăng Nhập            │ │
 │ └────────────────────────────────┘ │
 │                                    │
 │       Chưa có key? Mua ngay        │
@@ -82,19 +82,18 @@ Chữ "Mua Ngay" khi ấn vào sẽ chuyển đến Zalo Admin
 ┌──────────────────────────────────────────────────────┐
 │  🔑 XXX-XXX-XXXX-XXXXX              [Copy]   │
 │  ───────────────────────────────────────────────│
-│  Trạng thái:  ● ACTIVE                     │
-│  Thiết bị:    8a3f...c12 (đã gắn)         │
+│  Trạng thái:  ● ACTIVATED                     │
 │  Hết hạn:     19/11/2026 · còn 29 ngày    │
 │  ───────────────────────────────────────────────│
-│  [ GIA HẠN ]                      [ XEM CHI TIẾT ]   │
+│  [ GIA HẠN ]                                         │
 └───────────────────────────────────────────────────────┘
 │                                                       │
 └───────────────────────────────────────────────────────┘
 ┌───────────────────────────────────────────────────────┐
-│      Home            Functions               Setting │
+│      Home            Functions               RealTime │
 │       ●                                               │
 └───────────────────────────────────────────────────────┘
-
+KHI ẤN VÔ NÚT "GIA HẠN" SẼ CHUYỂN ĐẾN ZALO DEV
 # GIAO DIỆN FUNCTION
 ┌─────────────────────────────────────┐
 │                                     │
@@ -119,7 +118,7 @@ Chữ "Mua Ngay" khi ấn vào sẽ chuyển đến Zalo Admin
 │                                     │
 └─────────────────────────────────────┘
 ┌─────────────────────────────────────┐
-│     Home     Functions    Setting   │
+│     Home     Functions    RealTime  │
 │                  ●                  │
 └─────────────────────────────────────┘
 # GIAO DIỆN REALTIME
@@ -149,29 +148,28 @@ Chữ "Mua Ngay" khi ấn vào sẽ chuyển đến Zalo Admin
 │      Home            Function               RealTime  │
 │                                                ●      │
 └───────────────────────────────────────────────────────┘
-
+4 Nút  CPU OPTIMIZE, RAM OPTIMIZE, CLEAN STORAGE,OPTIMIZE GAME CÓ HIỆU ỨNG BẬT.
 VÍ DỤ 2 BẢNG THỐNG KÊ FPS VÀ PING
-│  ║  ┌─────────────────────────────────┐  ║│
-│  ║  │ FPS                             │  ║│
-│  ║  │                                 │  ║│
-│  ║  │  60                             │  ║│ 
-│  ║  │                                 │  ║│
-│  ║  │  ╱╲    ╱╲    ╱╲    ╱╲           │  ║│ 
-│  ║  │ ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲          │  ║│   
-│  ║  │╱    ╲╱    ╲╱    ╲╱    ╲         │  ║│
-│  ║  │                                 │  ║│
-│  ║  └─────────────────────────────────┘  ║│
-│  ║                                       ║│
-│  ║  ┌─────────────────────────────────┐  ║│
-│  ║  │ PING                            │  ║│
-│  ║  │                                 │  ║│
-│  ║  │  38 ms                          │  ║│
-│  ║  │                                 │  ║│
-│  ║  │  ╲    ╱╲    ╱╲    ╱╲            │  ║│
-│  ║  │   ╲  ╱  ╲  ╱  ╲  ╱  ╲           │  ║│
-│  ║  │    ╲╱    ╲╱    ╲╱    ╲          │  ║│
-│  ║  │                                 │  ║│
-│  ║  └─────────────────────────────────┘  ║│
+┌─────────────────────────────────┐   
+│ FPS                             │   
+│                                 │   
+│  60                             │    
+│                                 │   
+│  ╱╲    ╱╲    ╱╲    ╱╲           │    
+│ ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲          │      
+│╱    ╲╱    ╲╱    ╲╱    ╲         │   
+│                                 │   
+└─────────────────────────────────┘                                           
+┌─────────────────────────────────┐   
+│ PING                            │   
+│                                 │   
+│  38 ms                          │   
+│                                 │   
+│  ╲    ╱╲    ╱╲    ╱╲            │   
+│   ╲  ╱  ╲  ╱  ╲  ╱  ╲           │   
+│    ╲╱    ╲╱    ╲╱    ╲          │   
+│                                 │   
+└─────────────────────────────────┘   
 
 ### LƯU Ý ###
 
