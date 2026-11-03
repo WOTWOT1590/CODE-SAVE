@@ -42,11 +42,17 @@ Admin có quyền truy cấp lịch sửa mua hàng của khách
 Sẽ có acc random liên quân nhận free,0đ mỗi mỗi ngày nhận 1 acc, admin có thể chỉnh sửa giá các sản phẩm.
 Admin có thể thêm/xóa ảnh feedback dánh giá hiện ở trên phần sản phẩm (ảnh được lưu ở các link ảnh)
 Server Rate Limit
-Server-Side Rendering (SSR) kết hợp với Thin Client (Khách hàng mỏng). (Toàn bộ quá trình xử lý logic, tính toán giá tiền, kiểm tra cơ sở dữ liệu và ráp nối giao diện đều diễn ra hoàn toàn ở phía máy chủ (Server) trước khi trả về một cục HTML hoàn chỉnh cho trình duyệt. = SSR ; Phía trình duyệt của người dùng (Client) chỉ đóng vai trò hiển thị HTML và chạy các đoạn JavaScript cực kỳ tối giản (chỉ để làm hiệu ứng, chuyển tab, sáng/tối), không chứa bất kỳ logic nhạy cảm hay thuật toán cốt lõi nào. Người dùng bấm F12 lên sẽ hoàn toàn không thấy các dữ liệu quan trọng hay logic bẻ khóa. = Thin Client)
+Server-Side Rendering (SSR) kết hợp với Thin Client (Khách hàng mỏng)
+Ở trình duyệt khách sẽ chỉ có các js để tương tác, hiệu ứng,... k có 1 logic tính toán gì
 Link Qr nạp tiền: "https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-<TEMPLATE>.svg?amount=<AMOUNT>&addInfo=<DESCRIPTION>&accountName=<ACCOUNT_NAME>"
-ví dụ: "https://img.vietqr.io/image/ZALOPAY-0818709994-compact.svg?amount=10000&addInfo=CHAN+B%E1%BB%90+M%C3%80Y+%C4%90I&accountName=Nguy%E1%BB%85n+Ti%E1%BA%BFn" (Khi ngd muốn nạp tiền bằng tài khoản, ngd ấn chỗ nạp tiền rồi nhập số tiền hoặc chọn số tiền ở các nút (20.000, 50.000, 100.000, 200.000, 500.000) amuốn nạp => 10000, rồi ấn nút "Nạp Tiền", QrCode sẽ được tạo và nội dung)
+ví dụ: "https://img.vietqr.io/image/ZALOPAY-0818709994-compact.svg?amount=10000&addInfo=CHAN+B%E1%BB%90+M%C3%80Y+%C4%90I&accountName=Nguy%E1%BB%85n+Ti%E1%BA%BFn" (Khi ngd muốn nạp tiền bằng tài khoản, ngd ấn chỗ nạp tiền rồi nhập số tiền hoặc chọn số tiền ở các nút (20.000, 50.000, 100.000, 200.000, 500.000) muốn nạp => 10000, rồi ấn nút "Nạp Tiền", QrCode sẽ được tạo và nội dung)
 Môi trường chạy: Render
 Bank id: "Zalopay", Account no: 0818709994, template: compact, account name: Nguyễn Tiến
+Điều Khoản Sẽ có link riêng chỉ khi đăng nhập ấn vô dòng chữ mới hiện ra điều khoản shop,.ngoài ra k hiện ở đâu n
+Tài khoản SMM(MXH) thì MXH thì nhập số lượng, nhập gmail để admin gửi tk,mk về
+Buff mxh (SMM) thì nhập link tài khoản cần buff, số lượng 
+
+
 ### CÁC LINK SHOP ###
 1. GET /home - Giao Diện Trang Chủ 
 2. GET /login - Giao Diện Đăng Nhập
@@ -77,7 +83,7 @@ Bank id: "Zalopay", Account no: 0818709994, template: compact, account name: Ngu
     "membership": "Member",
     "orders_count": 1,
     "phone": "0....",
-    "username": "...."
+0    "username": "...."
   }
 }
 11. POST /api/v2/nap/#bank - Khởi tạo link ảnh QrCode nạo tiền
@@ -96,6 +102,5 @@ Bank id: "Zalopay", Account no: 0818709994, template: compact, account name: Ngu
 }
 15. POST /api/v3/buy/?id=.. - Gửi lệnh mua hàng, trừ tiền
 16. POST /api/v1/password - Đổi lại Mật Khẩu acc shop
-
-
-
+17. GET /dieu-khoan - điều khoản shop
+18. JSON /cdnjs/js.js - code js hiệu ứng, tương tác,.. bên trình duyệt khách
