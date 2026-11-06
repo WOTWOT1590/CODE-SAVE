@@ -83,7 +83,7 @@ Buff mxh (SMM) thì nhập link tài khoản cần buff, số lượng
     "membership": "Member",
     "orders_count": 1,
     "phone": "0....",
-0    "username": "...."
+    "username": "...."
   }
 }
 11. POST /api/v2/nap/#bank - Khởi tạo link ảnh QrCode nạo tiền
