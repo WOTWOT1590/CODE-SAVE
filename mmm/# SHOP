@@ -53,9 +53,6 @@ Tài khoản SMM(MXH) thì MXH thì nhập số lượng, nhập gmail để adm
 Buff mxh (SMM) thì nhập link tài khoản cần buff, số lượng 
 Admin có thể thay đổi giá SMM Riêng và Tên Sản phẩm SMM
 hero-slide hs1,hs2,hiệu ứng, luồng tương tác,v.v (liên quan đến tương tác client với web trực tiếp) được lưu trữ trong /cdnjs/js.js?v=a1cbb6f706 người dùng có thể tương tác trực tiếp k cần server
-
-
-
 ### CÁC LINK SHOP ###
 1. GET /home - Giao Diện Trang Chủ 
 2. GET /login - Giao Diện Đăng Nhập
@@ -86,7 +83,7 @@ hero-slide hs1,hs2,hiệu ứng, luồng tương tác,v.v (liên quan đến tư
     "membership": "Member",
     "orders_count": 1,
     "phone": "0....",
-0    "username": "...."
+    "username": "...."
   }
 }
 11. POST /api/v2/nap/#bank - Khởi tạo link ảnh QrCode nạo tiền
@@ -108,3 +105,4 @@ hero-slide hs1,hs2,hiệu ứng, luồng tương tác,v.v (liên quan đến tư
 17. GET /dieu-khoan - điều khoản shop
 18. JSON /cdnjs/js.js - code js hiệu ứng, tương tác,.. bên trình duyệt khách
 <script src="/cdnjs/js.js?v=a1cbb6f706" defer>
+##### ĐỌC KĨ LÀM ĐẦY ĐỦ KHÔNG SAI SÓT, KHÔNG HIỂU THÌ HỎI #####
