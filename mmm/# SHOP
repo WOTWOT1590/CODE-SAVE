@@ -1,0 +1,110 @@
+### KIẾN TRÚC TỔNG THỂ ###
+Backend: Node.js
+Giao diện cho tất cả: HTML/CSS/JS thuần kết hợp TailwindCSS
+Database & Cache: PostgreSQ/MongoDB
+Môi trường: RenderPhong cách: Warm-Canvas Editorial (warm, trustworthy, thoughtfully restrained), Cybertruck, Sang Trọng, Tối Giản.
+Kiểu chữ: FT Kunst Grotesk
+Màu chủ đạo:
+#F6821F (hoặc #ffb11f)
+#cacaca / #F7F7F7 (Nền)
+#c1c1c1c1 / #D9D9D9 Viền
+# Sản Phẩm #
+Tool (Tải file qua link sau khi thanh toán thành công)
+Code (Tải file qua link sau khi thanh toán thành công)
+Acc game (lấy tk/mk từ file)(admin có thể tải file acc lên)
+Tk:
+ChatGPT PLus (1/2/3 tháng) (cấp tk/mk sau khi thanh toán thành công)
+Capcut Pro (30/7 ngày)(cấp tk/mk sau khi thanh toán thành công)
+Youtube Pre (1 tháng)(cấp tk/mk sau khi thanh toán thành công)
+Canva Pro (1 năm)(cấp tk/mk sau khi thanh toán thành công)
+# HỆ THỐNG THANH TOÁN/NẠP TIỀN #
+Cơ chế ví điện tử: Khách cần đăng ký tài khoản, nạp tiền vào ví trước hoặc thanh toán trực tiếp đơn hàng.
+Dùng:
+Cổng thanh toán tự động (VietQR)
+Cổng api gạch thẻ tự độn (web gạch thẻ)
+# HỆ THỐNG ADMIN #
+Bảo mật Admin: Đăng nhập bằng Admin Key chuyên biệt hoặc phân quyền tài khoản Admin. (tk/mk=adminskibidint5431/trumfi5lq1590)
+Thống kê & Báo cáo: Biểu đồ doanh thu theo ngày/tháng, tổng đơn hàng, số dư khách, số lượng sản phẩm tồn kho.
+Quản lý Sản phẩm (CRUD): Thêm, sửa, xóa sản phẩm, phân nhóm danh mục.
+Quản lý Kho hàng (Inventory Management): Giao diện nhập kho dạng text bulk cho Account/Tài khoản MXH.
+Quản lý link tải xuống
+Bảo mật API: Chống tấn công DDOS, giới hạn tần suất request (Rate Limiting), chống SQL Injection, mã hóa mật khẩu (Bcrypt).
+Hiệu năng: Tốc độ phản hồi API dưới 200ms, khả năng chịu tải khi có nhiều người truy cập mua hàng cùng lúc (đặc biệt trong các đợt flash sale code/acc).
+# LƯU Ý #
+SERVER DÙNG: ,CDN Thư Viện Mã Nguồn (Tệp JS, CSS, Fonts),Reverse Proxy CDN,jsdelivr, cdnjs, Bootstrap CDN (hoặc StackDelivr), Google Hosted Libraries, https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css, ... nhiều cái nữa (nếu được thì nhúng link trực tiếp luôn "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css")
+Luồng SSR xử lý mượt mà HttpOnly Cookie để bảo mật phiên đăng nhập
+Giao diện web chỉ chỉnh được mỗi giao diện sáng/tối
+Khi đơn SMM lỗi chỉ báo "Không thể kết nối Server", cả sửa giá nữa acc ytb pre api bán 40k mà shop bán 2.080.000đ, bỏ tỉ giá nữa (Giữa lại Cộng thêm lợi nhuận)
+khi đồng bộ api từ nhà cung cấp sẽ chia ra từng phần riêng như: Dịch Vụ FaceBook, Dịch Vụ Installgram,...TikTok,..Yooutube,Telegram,..X,..FreeFire (Có hình ảnh app để người dùng phân biệt rõ: ảnh app fb,tele,ytb,...)
+Khi người dùng yêu cầu 7 Đơn nạp trong 10 Phút server sẽ k cho tạo mã qr nữa (trong 30p), nạp thẻ cào sai liên tiếp 5 lần trở lên thì chặn k cho nạp thẻ 45p(nạp thẻ sẽ có chiết khấu )
+Ở góc dưới bên phải Có ẢNH App Zalo (đó là nút liên hệ, chuyển đến zalo admin/dev)
+Admin có quyền truy cấp lịch sửa mua hàng của khách
+Sẽ có acc random liên quân nhận free,0đ mỗi mỗi ngày nhận 1 acc, admin có thể chỉnh sửa giá các sản phẩm.
+Admin có thể thêm/xóa ảnh feedback dánh giá hiện ở trên phần sản phẩm (ảnh được lưu ở các link ảnh)
+Server Rate Limit
+Server-Side Rendering (SSR) kết hợp với Thin Client (Khách hàng mỏng)
+Ở trình duyệt khách sẽ chỉ có các js để tương tác, hiệu ứng,... k có 1 logic tính toán gì
+Link Qr nạp tiền: "https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-<TEMPLATE>.svg?amount=<AMOUNT>&addInfo=<DESCRIPTION>&accountName=<ACCOUNT_NAME>"
+ví dụ: "https://img.vietqr.io/image/ZALOPAY-0818709994-compact.svg?amount=10000&addInfo=CHAN+B%E1%BB%90+M%C3%80Y+%C4%90I&accountName=Nguy%E1%BB%85n+Ti%E1%BA%BFn" (Khi ngd muốn nạp tiền bằng tài khoản, ngd ấn chỗ nạp tiền rồi nhập số tiền hoặc chọn số tiền ở các nút (20.000, 50.000, 100.000, 200.000, 500.000) muốn nạp => 10000, rồi ấn nút "Nạp Tiền", QrCode sẽ được tạo và nội dung)
+Môi trường chạy: Render
+Bank id: "Zalopay", Account no: 0818709994, template: compact, account name: Nguyễn Tiến
+Điều Khoản Sẽ có link riêng chỉ khi đăng nhập ấn vô dòng chữ mới hiện ra điều khoản shop,.ngoài ra k hiện ở đâu n
+Tài khoản SMM(MXH) thì MXH thì nhập số lượng, nhập gmail để admin gửi tk,mk về
+Buff mxh (SMM) thì nhập link tài khoản cần buff, số lượng 
+Admin có thể thay đổi giá SMM Riêng và Tên Sản phẩm SMM
+hero-slide hs1,hs2,hiệu ứng, luồng tương tác,v.v (liên quan đến tương tác client với web trực tiếp) được lưu trữ trong /cdnjs/js.js?v=a1cbb6f706 người dùng có thể tương tác trực tiếp k cần server
+
+
+
+### CÁC LINK SHOP ###
+1. GET /home - Giao Diện Trang Chủ 
+2. GET /login - Giao Diện Đăng Nhập
+3. GET /register - Giao Diện Đăng Ký 
+4. GET /product/?id=.. - Xem Chi Tiết Sản Phẩm 
+5. GET /nap-tien - Giao Diện Nạp Tiền (/nap-tien/#bank - nạp tiền bằng chuyển khoản, /nap-tien/#thecao - Nạp tiền bằng thẻ cào)
+6. GET /history/buy - Giao Diện Lịch Sử Mua Hàng
+7. GET /account - Giao Diện Thông Tin Tài Khoản
+8. POST /api/v1/login - Gửi Thông tin Tk/mk shop để đăng nhập (chặn nếu gửi 5requests/3p, chặn 30 phút)
+{
+    "success": true,
+    "login": true
+}
+9. POST /api/v1/register - Gửi Thông Tin tk/mk/gmail đê đăng ký tài khoản shop (chặn 30p nếu gửi nếu gửi 5 requests/3p)
+{
+    "success": true,
+    "register": true
+}
+10. POST /api/v1/account - Lấy số tiền, thông tin account shop đang login
+{
+  "success": true,
+  "user": {
+    "avatar": "https://ui-avatars.com/api/?name=hwhhhhhhhhhwh&background=7c3aed&color=fff&size=40",
+    "balance": 0,
+    "created_at": "2026-08-29T06:33:41.53726+00:00",
+    "email": "....@gmail.com",
+    "id": ".....",
+    "membership": "Member",
+    "orders_count": 1,
+    "phone": "0....",
+0    "username": "...."
+  }
+}
+11. POST /api/v2/nap/#bank - Khởi tạo link ảnh QrCode nạo tiền
+12. POST /api/v2/nap/#thecao - Gửi số seri,mã thẻ,loại thẻ,số tiền đến website gạch thẻ
+14. POST /api/v3/history/buy - Lấy danh sách đơn hàng đã mua
+{
+    "success": true,
+    "id": ...,
+    "username": ...,
+    "oder": [
+        {
+        ...
+        }
+        .....
+        ]
+}
+15. POST /api/v3/buy/?id=.. - Gửi lệnh mua hàng, trừ tiền
+16. POST /api/v1/password - Đổi lại Mật Khẩu acc shop
+17. GET /dieu-khoan - điều khoản shop
+18. JSON /cdnjs/js.js - code js hiệu ứng, tương tác,.. bên trình duyệt khách
+<script src="/cdnjs/js.js?v=a1cbb6f706" defer>
